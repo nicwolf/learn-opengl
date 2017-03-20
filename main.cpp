@@ -124,34 +124,49 @@ int main(int argc, char *argv[])
 
     // Create Geometry Data
     // --------------------
-    // Define the vertices for a square
-    GLfloat vertices[] = {
+    // Define the vertices for two triangles.
+    // The first:
+    GLfloat vertices0[] = {
          0.5f,  0.5f, 0.0f,
          0.5f, -0.5f, 0.0f,
-        -0.5f, -0.5f, 0.0f,
-         0.5f,  0.6f, 0.0f,
-        -0.5f, -0.4f, 0.0f,
-        -0.5f,  0.6f, 0.0f
+        -0.5f, -0.5f, 0.0f
+    };
+    // The second:
+    GLfloat vertices1[] = {
+        0.5f,  0.6f, 0.0f,
+       -0.5f, -0.4f, 0.0f,
+       -0.5f,  0.6f, 0.0f
     };
 
-
-    // Setup Graphics Memory
-    // ---------------------
-    // Generate a VBO
+    // Setup Graphics Memory: Triangle 1
+    // ---------------------------------
+    // Generate the VBOs
     // This stores our vertex attributes.
-    GLuint VBO;
-    glGenBuffers(1, &VBO);
+    GLuint vbos[2];
+    glGenBuffers(2, vbos);
 
-    // Generate a VAO
+    // Generate the VAOs
     // This holds all of the vertex attributes from our VBO and EBO.
-    GLuint VAO;
-    glGenVertexArrays(1, &VAO);
+    GLuint vaos[2];
+    glGenVertexArrays(2, vaos);
 
-    // Bind the VAO
-    glBindVertexArray(VAO);
+    // Bind the VAO: Triangle 1
+    glBindVertexArray(vaos[0]);
         // Bind VBO into an OpenGL Array Buffer
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, vbos[0]);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices0), vertices0, GL_STATIC_DRAW);
+        // Set Vertex attribute pointers
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*) 0);
+        // Enable the attribute we just setup
+        glEnableVertexAttribArray(0);
+    // Unbind the VAO
+    glBindVertexArray(0);
+
+    // Bind the VAO: Triangle 2
+    glBindVertexArray(vaos[1]);
+        // Bind VBO into an OpenGL Array Buffer
+        glBindBuffer(GL_ARRAY_BUFFER, vbos[1]);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
         // Set Vertex attribute pointers
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*) 0);
         // Enable the attribute we just setup
@@ -169,10 +184,14 @@ int main(int argc, char *argv[])
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Render square
+        // Render triangles
         glUseProgram(shaderProgram);
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        // Triangle 1
+        glBindVertexArray(vaos[0]);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        // Triangle 2
+        glBindVertexArray(vaos[1]);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
         glBindVertexArray(0);
 
         // Swap the current color buffer out for the one just drawn
