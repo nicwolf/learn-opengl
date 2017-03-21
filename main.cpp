@@ -2,6 +2,7 @@
 #include <math.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <SOIL.h>
 
 #include "shader.h"
 
@@ -45,10 +46,6 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    GLint nrAttributes;
-    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
-    std::cout << "Max # of Vertex Attributes: " << nrAttributes << std::endl;
-
     // Viewport Setup
     // --------------
     int width, height;
@@ -59,14 +56,16 @@ int main(int argc, char *argv[])
     // --------------------
     // Define the vertices for a square
     GLfloat vertices[] = {
-        // Positions        // Colors         //
-         0.0f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, // Top Right
-         0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, // Bottom Right
-        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f  // Bottom Left
+        // Positions         // Colors          // Texture  //
+         0.5f,  0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  1.0f, 1.0f, // Top Right
+         0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f, // Bottom Right
+        -0.5f, -0.5f, 0.0f,  0.0f, 0.0f, 1.0f,  0.0f, 0.0f, // Bottom Left
+        -0.5f,  0.5f, 0.0f,  1.0f, 1.0f, 0.0f,  0.0f, 1.0f  // Top Left
     };
     // Define the index order for drawing the triangles in the square
     GLuint indices[] = {
-        0, 1, 2 // First Triangle
+        0, 1, 3, // First Triangle
+        1, 2, 3
     };
 
 
@@ -87,6 +86,47 @@ int main(int argc, char *argv[])
     GLuint VAO;
     glGenVertexArrays(1, &VAO);
 
+    // Generate the Container texture
+    int containerImageWidth, containerImageHeight;
+    unsigned char* containerImage = SOIL_load_image("../learn-opengl/assets/container.jpg",
+                                           &containerImageWidth, &containerImageHeight,
+                                           0, SOIL_LOAD_RGB);
+    GLuint containerTexture;
+    glGenTextures(1, &containerTexture);
+    glBindTexture(GL_TEXTURE_2D, containerTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    float borderColor[] = { 1.0f, 1.0f, 0.0f, 1.0f };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+                 containerImageWidth, containerImageHeight,
+                 0, GL_RGB, GL_UNSIGNED_BYTE, containerImage);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    SOIL_free_image_data(containerImage);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Generate the Face texture
+    int faceImageWidth, faceImageHeight;
+    unsigned char* faceImage = SOIL_load_image("../learn-opengl/assets/awesomeface.png",
+                                           &faceImageWidth, &faceImageHeight,
+                                           0, SOIL_LOAD_RGB);
+    GLuint faceTexture;
+    glGenTextures(1, &faceTexture);
+    glBindTexture(GL_TEXTURE_2D, faceTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+                 faceImageWidth, faceImageHeight,
+                 0, GL_RGB, GL_UNSIGNED_BYTE, faceImage);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    SOIL_free_image_data(faceImage);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
     // Bind the VAO
     glBindVertexArray(VAO);
         // Bind VBO into an OpenGL Array Buffer
@@ -96,11 +136,14 @@ int main(int argc, char *argv[])
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
         // Setup Attribute 0: Position
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*) 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*) 0);
         glEnableVertexAttribArray(0);
         // Setup Attribute 1: Color
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*) (3 * sizeof(GLfloat)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*) (3 * sizeof(GLfloat)));
         glEnableVertexAttribArray(1);
+        // Setup Attribute 2: Texture Coordinate
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*) (6 * sizeof(GLfloat)));
+        glEnableVertexAttribArray(2);
     // Unbind the VAO
     glBindVertexArray(0);
 
@@ -120,13 +163,15 @@ int main(int argc, char *argv[])
 
         // Render square
         GLfloat timeValue = glfwGetTime();
-        GLfloat horizontalOffset = sin(timeValue) * .5;
-        GLfloat verticalOffset   = cos(timeValue) * .5;
-        GLint offsetLocation = glGetUniformLocation(shaderTriangle.Program, "offset");
         shaderTriangle.Use();
-        glUniform3f(offsetLocation, horizontalOffset, verticalOffset, 1.0f);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, containerTexture);
+        glUniform1i(glGetUniformLocation(shaderTriangle.Program, "containerTexture"), 0);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, faceTexture);
+        glUniform1i(glGetUniformLocation(shaderTriangle.Program, "faceTexture"), 1);
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
 
         // Swap the current color buffer out for the one just drawn
