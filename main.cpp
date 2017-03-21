@@ -120,10 +120,10 @@ int main(int argc, char *argv[])
 
         // Render square
         GLfloat timeValue = glfwGetTime();
-        GLfloat greenValue = (sin(timeValue) / 2) + 0.5;
-        GLint vertexColorLocation = glGetUniformLocation(shaderTriangle.Program, "uniformColor");
+        GLfloat horizontalOffset = sin(timeValue) * .5;
+        GLint offsetLocation = glGetUniformLocation(shaderTriangle.Program, "offset");
         shaderTriangle.Use();
-        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+        glUniform3f(offsetLocation, horizontalOffset, 0.0f, 1.0f);
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
