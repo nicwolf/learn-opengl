@@ -3,17 +3,21 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <SOIL.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "shader.h"
 
 using namespace std;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+float clip(float a, float min, float max);
+
+GLfloat mixConstant;
 
 int main(int argc, char *argv[])
 {
-    std::ifstream test;
-    std::cout << test.rdbuf() << std::endl;
     // Administrivia
     // -------------
     // Initialize GLFW
@@ -68,7 +72,6 @@ int main(int argc, char *argv[])
         1, 2, 3
     };
 
-
     // Setup Graphics Memory
     // ---------------------
     // Generate a VBO
@@ -94,8 +97,8 @@ int main(int argc, char *argv[])
     GLuint containerTexture;
     glGenTextures(1, &containerTexture);
     glBindTexture(GL_TEXTURE_2D, containerTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     float borderColor[] = { 1.0f, 1.0f, 0.0f, 1.0f };
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -115,8 +118,8 @@ int main(int argc, char *argv[])
     GLuint faceTexture;
     glGenTextures(1, &faceTexture);
     glBindTexture(GL_TEXTURE_2D, faceTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -151,6 +154,8 @@ int main(int argc, char *argv[])
     Shader shaderTriangle("../learn-opengl/shaders/triangle.vert",
                           "../learn-opengl/shaders/triangle.frag");
 
+    mixConstant = 0.0;
+
     // Render Loop
     // -----------
     while(!glfwWindowShouldClose(window)) {
@@ -164,12 +169,27 @@ int main(int argc, char *argv[])
         // Render square
         GLfloat timeValue = glfwGetTime();
         shaderTriangle.Use();
+
+        // Send the Transformation Matrix
+        glm::mat4 trans;
+        trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+         trans = glm::rotate(trans, glm::radians(timeValue * 50.f), glm::vec3(0.0f, 0.0f, 1.0f));
+        GLuint transformLoc = glGetUniformLocation(shaderTriangle.Program, "transform");
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+
+        // Bind the Container Texture
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, containerTexture);
         glUniform1i(glGetUniformLocation(shaderTriangle.Program, "containerTexture"), 0);
+
+        // Bind the Face Texture
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, faceTexture);
         glUniform1i(glGetUniformLocation(shaderTriangle.Program, "faceTexture"), 1);
+
+        // Send the mix constant as a uniform
+        glUniform1f(glGetUniformLocation(shaderTriangle.Program, "mixConstant"), mixConstant);
+
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
@@ -206,4 +226,16 @@ void key_callback(GLFWwindow* window, int key, int scandcode, int action, int mo
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
     }
+    if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
+        mixConstant += 0.08;
+        mixConstant = clip(mixConstant, 0.0, 1.0);
+    }
+    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
+        mixConstant -= 0.08;
+        mixConstant = clip(mixConstant, 0.0, 1.0);
+    }
+}
+
+float clip(float a, float min, float max) {
+    return a <= min ? min : a >= max ? max : a;
 }
