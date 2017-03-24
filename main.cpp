@@ -170,12 +170,39 @@ int main(int argc, char *argv[])
         GLfloat timeValue = glfwGetTime();
         shaderTriangle.Use();
 
+        // Draw the First Container
+        // ------------------------
         // Send the Transformation Matrix
-        glm::mat4 trans;
-        trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
-         trans = glm::rotate(trans, glm::radians(timeValue * 50.f), glm::vec3(0.0f, 0.0f, 1.0f));
+        glm::mat4 trans1;
+        trans1 = glm::translate(trans1, glm::vec3(0.5f, -0.5f, 0.0f));
+        trans1 = glm::rotate(trans1, glm::radians(timeValue * 50.f), glm::vec3(0.0f, 0.0f, 1.0f));
         GLuint transformLoc = glGetUniformLocation(shaderTriangle.Program, "transform");
-        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans1));
+
+        // Bind the Container Texture
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, containerTexture);
+        glUniform1i(glGetUniformLocation(shaderTriangle.Program, "containerTexture"), 0);
+
+        // Bind the Face Texture
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, faceTexture);
+        glUniform1i(glGetUniformLocation(shaderTriangle.Program, "faceTexture"), 1);
+
+        // Send the mix constant as a uniform
+        glUniform1f(glGetUniformLocation(shaderTriangle.Program, "mixConstant"), mixConstant);
+
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+
+        // Draw the Second Container
+        // -------------------------
+        // Send the Transformation Matrix
+        glm::mat4 trans2;
+        trans2 = glm::scale(trans2, glm::vec3(0.5 * sin(timeValue), 0.5f * sin(timeValue), 1.0f));
+        trans2 = glm::translate(trans2, glm::vec3(-0.5f, 0.5f, 0.0f));
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans2));
 
         // Bind the Container Texture
         glActiveTexture(GL_TEXTURE0);
