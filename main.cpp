@@ -27,11 +27,14 @@ int main(int argc, char *argv[])
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    const GLuint WIDTH  = 800;
+    const GLuint HEIGHT = 600;
+
 
     // Window Setup
     // ------------
     // Create a window object
-    GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", nullptr, nullptr);
     if (window == nullptr) {
         std::cout << "Failed to create GLFW window." << std::endl;
         glfwTerminate();
@@ -42,6 +45,7 @@ int main(int argc, char *argv[])
     // Register our key callbacks
     glfwSetKeyCallback(window, key_callback);
 
+
     // GLEW Setup
     // ----------
     glewExperimental = GL_TRUE;
@@ -50,27 +54,80 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+
     // Viewport Setup
     // --------------
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
+
+    // OpenGL Options
+    // --------------
+    glEnable(GL_DEPTH_TEST);
+
+
     // Create Geometry Data
     // --------------------
-    // Define the vertices for a square
+    // Define the vertices for a cube
     GLfloat vertices[] = {
-        // Positions         // Colors          // Texture  //
-         0.5f,  0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  1.0f, 1.0f, // Top Right
-         0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f, // Bottom Right
-        -0.5f, -0.5f, 0.0f,  0.0f, 0.0f, 1.0f,  0.0f, 0.0f, // Bottom Left
-        -0.5f,  0.5f, 0.0f,  1.0f, 1.0f, 0.0f,  0.0f, 1.0f  // Top Left
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
-    // Define the index order for drawing the triangles in the square
-    GLuint indices[] = {
-        0, 1, 3, // First Triangle
-        1, 2, 3
+
+    // Define a handful of locations to draw the cube at
+    glm::vec3 cubePositions[] = {
+        glm::vec3( 0.0f,  0.0f,   0.0f),
+        glm::vec3( 2.0f,  5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, - 2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3( 2.4f, -0.4f,  -3.5f),
+        glm::vec3(-1.7f,  3.0f,  -7.5f),
+        glm::vec3( 1.3f, -2.0f,  -2.5f),
+        glm::vec3( 1.5f,  2.0f,  -2.5f),
+        glm::vec3( 1.5f,  0.2f,  -1.5f),
+        glm::vec3(-1.3f,  1.0f,  -1.5f)
     };
+
 
     // Setup Graphics Memory
     // ---------------------
@@ -79,17 +136,18 @@ int main(int argc, char *argv[])
     GLuint VBO;
     glGenBuffers(1, &VBO);
 
-    // Generate an EBO
-    // This stores our indices.
-    GLuint EBO;
-    glGenBuffers(1, &EBO);
-
     // Generate a VAO
     // This holds all of the vertex attributes from our VBO and EBO.
     GLuint VAO;
     glGenVertexArrays(1, &VAO);
 
-    // Generate the Container texture
+
+    // Setup Textures
+    // --------------
+    // We set up two different textures here and will interpolate
+    // between them according to the global `mixConstant`.
+    //
+    // First, we set up an image of a wooden container.
     int containerImageWidth, containerImageHeight;
     unsigned char* containerImage = SOIL_load_image("../learn-opengl/assets/container.jpg",
                                            &containerImageWidth, &containerImageHeight,
@@ -110,7 +168,7 @@ int main(int argc, char *argv[])
     SOIL_free_image_data(containerImage);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    // Generate the Face texture
+    // Second, we set up an image of a smiley face
     int faceImageWidth, faceImageHeight;
     unsigned char* faceImage = SOIL_load_image("../learn-opengl/assets/awesomeface.png",
                                            &faceImageWidth, &faceImageHeight,
@@ -130,31 +188,28 @@ int main(int argc, char *argv[])
     SOIL_free_image_data(faceImage);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    // Bind the VAO
+
+    // Setup VAO
+    // ---------
     glBindVertexArray(VAO);
         // Bind VBO into an OpenGL Array Buffer
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-        // Bind EBO into an OpenGL Element Array Buffer
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
         // Setup Attribute 0: Position
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*) 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*) 0);
         glEnableVertexAttribArray(0);
-        // Setup Attribute 1: Color
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*) (3 * sizeof(GLfloat)));
-        glEnableVertexAttribArray(1);
         // Setup Attribute 2: Texture Coordinate
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*) (6 * sizeof(GLfloat)));
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*) (3 * sizeof(GLfloat)));
         glEnableVertexAttribArray(2);
     // Unbind the VAO
     glBindVertexArray(0);
 
-    // Load Shader Program
-    Shader shaderTriangle("../learn-opengl/shaders/triangle.vert",
+
+    // Load Shaders
+    // ------------
+    Shader shaderProgram("../learn-opengl/shaders/triangle.vert",
                           "../learn-opengl/shaders/triangle.frag");
 
-    mixConstant = 0.0;
 
     // Render Loop
     // -----------
@@ -164,61 +219,56 @@ int main(int argc, char *argv[])
 
         // Clear buffer
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Render square
-        GLfloat timeValue = glfwGetTime();
-        shaderTriangle.Use();
+        // Store the current time
+        GLfloat time = glfwGetTime();
 
-        // Draw the First Container
-        // ------------------------
-        // Send the Transformation Matrix
-        glm::mat4 trans1;
-        trans1 = glm::translate(trans1, glm::vec3(0.5f, -0.5f, 0.0f));
-        trans1 = glm::rotate(trans1, glm::radians(timeValue * 50.f), glm::vec3(0.0f, 0.0f, 1.0f));
-        GLuint transformLoc = glGetUniformLocation(shaderTriangle.Program, "transform");
-        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans1));
+        // Send the View Matrix
+        glm::mat4 view;
+        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+        GLuint viewMatrixLoc = glGetUniformLocation(shaderProgram.Program, "view");
+        glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, glm::value_ptr(view));
 
-        // Bind the Container Texture
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, containerTexture);
-        glUniform1i(glGetUniformLocation(shaderTriangle.Program, "containerTexture"), 0);
-
-        // Bind the Face Texture
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, faceTexture);
-        glUniform1i(glGetUniformLocation(shaderTriangle.Program, "faceTexture"), 1);
-
-        // Send the mix constant as a uniform
-        glUniform1f(glGetUniformLocation(shaderTriangle.Program, "mixConstant"), mixConstant);
-
-        glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
-
-        // Draw the Second Container
-        // -------------------------
-        // Send the Transformation Matrix
-        glm::mat4 trans2;
-        trans2 = glm::scale(trans2, glm::vec3(0.5 * sin(timeValue), 0.5f * sin(timeValue), 1.0f));
-        trans2 = glm::translate(trans2, glm::vec3(-0.5f, 0.5f, 0.0f));
-        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans2));
+        // Send the Perspective Matrix
+        glm::mat4 perspective;
+        perspective = glm::perspective(glm::radians(45.0f), (GLfloat) WIDTH / (GLfloat) HEIGHT, 0.1f, 100.0f);
+        GLuint perspectiveMatrixLoc = glGetUniformLocation(shaderProgram.Program, "perspective");
+        glUniformMatrix4fv(perspectiveMatrixLoc, 1, GL_FALSE, glm::value_ptr(perspective));
 
         // Bind the Container Texture
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, containerTexture);
-        glUniform1i(glGetUniformLocation(shaderTriangle.Program, "containerTexture"), 0);
+        glUniform1i(glGetUniformLocation(shaderProgram.Program, "containerTexture"), 0);
 
         // Bind the Face Texture
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, faceTexture);
-        glUniform1i(glGetUniformLocation(shaderTriangle.Program, "faceTexture"), 1);
+        glUniform1i(glGetUniformLocation(shaderProgram.Program, "faceTexture"), 1);
 
-        // Send the mix constant as a uniform
-        glUniform1f(glGetUniformLocation(shaderTriangle.Program, "mixConstant"), mixConstant);
+        // Send the Mix Constant
+        glUniform1f(glGetUniformLocation(shaderProgram.Program, "mixConstant"), mixConstant);
 
+        // Draw Cubes
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        for (GLuint i = 0; i < 10; i++) {
+            // Send the Model Matrix --- this gets updated for each cube
+            glm::mat4 model;
+            model = glm::translate(model, cubePositions[i]);
+            // Rotate each cube based on its index
+            GLfloat angle = glm::radians(20.0f * i);
+            // Additionally, rotate every third cube based on the elapsed time
+            if (i % 3 == 0) {
+                angle += glm::radians(time * (i - .1) * 50.0f);
+            }
+            model = glm::rotate(model, angle, glm::vec3(0.5f, 1.0f, 0.0f));
+            GLuint modelMatrixLoc = glGetUniformLocation(shaderProgram.Program, "model");
+            glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+            // Draw
+            shaderProgram.Use();
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
         glBindVertexArray(0);
 
         // Swap the current color buffer out for the one just drawn
