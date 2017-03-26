@@ -8,13 +8,29 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "shader.h"
+#include "camera.h"
 
 using namespace std;
 
+// Function Prototypes
+void do_movement();
+void mouse_callback(GLFWwindow*, double xPos, double yPos);
+void scroll_callback(GLFWwindow* window, double xOff, double yOff);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 float clip(float a, float min, float max);
 
+// Input Monitoring
+GLfloat mouseXLast = 400, mouseYLast = 300;
+bool firstMouseMovement = true;
+bool keys[1024];
+
+// Camera Setup
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+
+// Global Properties
 GLfloat mixConstant;
+GLfloat deltaTime = 0.0f;
+GLfloat lastFrame = 0.0f;
 
 int main(int argc, char *argv[])
 {
@@ -30,7 +46,6 @@ int main(int argc, char *argv[])
     const GLuint WIDTH  = 800;
     const GLuint HEIGHT = 600;
 
-
     // Window Setup
     // ------------
     // Create a window object
@@ -44,7 +59,10 @@ int main(int argc, char *argv[])
     glfwMakeContextCurrent(window);
     // Register our key callbacks
     glfwSetKeyCallback(window, key_callback);
-
+    // Capture Mouse
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
 
     // GLEW Setup
     // ----------
@@ -54,18 +72,15 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-
     // Viewport Setup
     // --------------
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
-
     // OpenGL Options
     // --------------
     glEnable(GL_DEPTH_TEST);
-
 
     // Create Geometry Data
     // --------------------
@@ -128,7 +143,6 @@ int main(int argc, char *argv[])
         glm::vec3(-1.3f,  1.0f,  -1.5f)
     };
 
-
     // Setup Graphics Memory
     // ---------------------
     // Generate a VBO
@@ -140,7 +154,6 @@ int main(int argc, char *argv[])
     // This holds all of the vertex attributes from our VBO and EBO.
     GLuint VAO;
     glGenVertexArrays(1, &VAO);
-
 
     // Setup Textures
     // --------------
@@ -188,7 +201,6 @@ int main(int argc, char *argv[])
     SOIL_free_image_data(faceImage);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-
     // Setup VAO
     // ---------
     glBindVertexArray(VAO);
@@ -204,35 +216,36 @@ int main(int argc, char *argv[])
     // Unbind the VAO
     glBindVertexArray(0);
 
-
     // Load Shaders
     // ------------
     Shader shaderProgram("../learn-opengl/shaders/triangle.vert",
                           "../learn-opengl/shaders/triangle.frag");
-
 
     // Render Loop
     // -----------
     while(!glfwWindowShouldClose(window)) {
         // Check if any events need to be processed
         glfwPollEvents();
+        do_movement();
 
         // Clear buffer
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Store the current time
-        GLfloat time = glfwGetTime();
+        GLfloat currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
 
         // Send the View Matrix
         glm::mat4 view;
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+        view = camera.getViewMatrix();
         GLuint viewMatrixLoc = glGetUniformLocation(shaderProgram.Program, "view");
         glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, glm::value_ptr(view));
 
         // Send the Perspective Matrix
         glm::mat4 perspective;
-        perspective = glm::perspective(glm::radians(45.0f), (GLfloat) WIDTH / (GLfloat) HEIGHT, 0.1f, 100.0f);
+        perspective = glm::perspective(glm::radians(camera.fov), (GLfloat) WIDTH / (GLfloat) HEIGHT, 0.1f, 100.0f);
         GLuint perspectiveMatrixLoc = glGetUniformLocation(shaderProgram.Program, "perspective");
         glUniformMatrix4fv(perspectiveMatrixLoc, 1, GL_FALSE, glm::value_ptr(perspective));
 
@@ -257,10 +270,6 @@ int main(int argc, char *argv[])
             model = glm::translate(model, cubePositions[i]);
             // Rotate each cube based on its index
             GLfloat angle = glm::radians(20.0f * i);
-            // Additionally, rotate every third cube based on the elapsed time
-            if (i % 3 == 0) {
-                angle += glm::radians(time * (i - .1) * 50.0f);
-            }
             model = glm::rotate(model, angle, glm::vec3(0.5f, 1.0f, 0.0f));
             GLuint modelMatrixLoc = glGetUniformLocation(shaderProgram.Program, "model");
             glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -284,13 +293,37 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+void do_movement() {
+    GLfloat cameraSpeed = 5.0f * deltaTime;
+    if (keys[GLFW_KEY_W]) {
+        camera.processKeyboard(FORWARD, deltaTime);
+    }
+
+    if (keys[GLFW_KEY_S]) {
+        camera.processKeyboard(BACKWARD, deltaTime);
+    }
+
+    if (keys[GLFW_KEY_A]) {
+        camera.processKeyboard(LEFT, deltaTime);
+    }
+    if (keys[GLFW_KEY_D]) {
+        camera.processKeyboard(RIGHT, deltaTime);
+    }
+}
+
 void key_callback(GLFWwindow* window, int key, int scandcode, int action, int mode) {
+    if (action == GLFW_PRESS) {
+        keys[key] = true;
+    }
+    else if (action == GLFW_RELEASE) {
+        keys[key] = false;
+    }
     // "ESCAPE" Key prompts the window to close at the start of the next loop.
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GL_TRUE);
     }
     // "W" Key toggles between solid and wireframe polygon mode.
-    if (key == GLFW_KEY_W && action == GLFW_PRESS) {
+    if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
         // This tripped me up for a second --- fetching GL_POLYGON_MODE returns
         // two integers, one for the front and one for the back of polygons.
         // Each face can have a different mode.
@@ -311,6 +344,28 @@ void key_callback(GLFWwindow* window, int key, int scandcode, int action, int mo
         mixConstant -= 0.08;
         mixConstant = clip(mixConstant, 0.0, 1.0);
     }
+}
+
+void mouse_callback(GLFWwindow* window, double xPos, double yPos) {
+    if (firstMouseMovement) {
+        mouseXLast = xPos;
+        mouseYLast = yPos;
+        firstMouseMovement = false;
+    }
+    GLfloat xOff = xPos - mouseXLast;
+    GLfloat yOff = mouseYLast - yPos;
+    mouseXLast = xPos;
+    mouseYLast = yPos;
+
+    GLfloat sensitivity = 0.05;
+    xOff *= sensitivity;
+    yOff *= sensitivity;
+
+    camera.processMouseMovement(xOff, yOff);
+}
+
+void scroll_callback(GLFWwindow* window, double xOff, double yOff) {
+    camera.processMouseScroll(yOff);
 }
 
 float clip(float a, float min, float max) {
