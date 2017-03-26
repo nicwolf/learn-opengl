@@ -129,20 +129,6 @@ int main(int argc, char *argv[])
         -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
 
-    // Define a handful of locations to draw the cube at
-    glm::vec3 cubePositions[] = {
-        glm::vec3( 0.0f,  0.0f,   0.0f),
-        glm::vec3( 2.0f,  5.0f, -15.0f),
-        glm::vec3(-1.5f, -2.2f, - 2.5f),
-        glm::vec3(-3.8f, -2.0f, -12.3f),
-        glm::vec3( 2.4f, -0.4f,  -3.5f),
-        glm::vec3(-1.7f,  3.0f,  -7.5f),
-        glm::vec3( 1.3f, -2.0f,  -2.5f),
-        glm::vec3( 1.5f,  2.0f,  -2.5f),
-        glm::vec3( 1.5f,  0.2f,  -1.5f),
-        glm::vec3(-1.3f,  1.0f,  -1.5f)
-    };
-
     // Setup Graphics Memory
     // ---------------------
     // Generate a VBO
@@ -154,6 +140,10 @@ int main(int argc, char *argv[])
     // This holds all of the vertex attributes from our VBO and EBO.
     GLuint VAO;
     glGenVertexArrays(1, &VAO);
+
+    // Generate a Lighting VAO
+    GLuint lightVAO;
+    glGenVertexArrays(1, &lightVAO);
 
     // Setup Textures
     // --------------
@@ -201,8 +191,8 @@ int main(int argc, char *argv[])
     SOIL_free_image_data(faceImage);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    // Setup VAO
-    // ---------
+    // Setup VAOs
+    // ----------
     glBindVertexArray(VAO);
         // Bind VBO into an OpenGL Array Buffer
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -216,10 +206,18 @@ int main(int argc, char *argv[])
     // Unbind the VAO
     glBindVertexArray(0);
 
+    glBindVertexArray(lightVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*) 0);
+        glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
+
     // Load Shaders
     // ------------
-    Shader shaderProgram("../learn-opengl/shaders/triangle.vert",
-                          "../learn-opengl/shaders/triangle.frag");
+    Shader cubeShader("../learn-opengl/shaders/cube.vert",
+                      "../learn-opengl/shaders/cube.frag");
+    Shader lightShader("../learn-opengl/shaders/light.vert",
+                       "../learn-opengl/shaders/light.frag");
 
     // Render Loop
     // -----------
@@ -237,47 +235,83 @@ int main(int argc, char *argv[])
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        // Send the View Matrix
+        // Transformation Matrices
         glm::mat4 view;
-        view = camera.getViewMatrix();
-        GLuint viewMatrixLoc = glGetUniformLocation(shaderProgram.Program, "view");
-        glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, glm::value_ptr(view));
-
-        // Send the Perspective Matrix
+        GLuint viewMatrixLoc;
         glm::mat4 perspective;
-        perspective = glm::perspective(glm::radians(camera.fov), (GLfloat) WIDTH / (GLfloat) HEIGHT, 0.1f, 100.0f);
-        GLuint perspectiveMatrixLoc = glGetUniformLocation(shaderProgram.Program, "perspective");
-        glUniformMatrix4fv(perspectiveMatrixLoc, 1, GL_FALSE, glm::value_ptr(perspective));
+        GLuint perspectiveMatrixLoc;
+        glm::mat4 model;
+        GLuint modelMatrixLoc;
 
-        // Bind the Container Texture
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, containerTexture);
-        glUniform1i(glGetUniformLocation(shaderProgram.Program, "containerTexture"), 0);
+        // Lighting
+        glm::vec3 lightColor = glm::vec3(1.0, 1.0, 1.0);
 
-        // Bind the Face Texture
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, faceTexture);
-        glUniform1i(glGetUniformLocation(shaderProgram.Program, "faceTexture"), 1);
-
-        // Send the Mix Constant
-        glUniform1f(glGetUniformLocation(shaderProgram.Program, "mixConstant"), mixConstant);
-
-        // Draw Cubes
+        // Draw Cube
+        cubeShader.Use();
         glBindVertexArray(VAO);
-        for (GLuint i = 0; i < 10; i++) {
-            // Send the Model Matrix --- this gets updated for each cube
-            glm::mat4 model;
-            model = glm::translate(model, cubePositions[i]);
-            // Rotate each cube based on its index
-            GLfloat angle = glm::radians(20.0f * i);
-            model = glm::rotate(model, angle, glm::vec3(0.5f, 1.0f, 0.0f));
-            GLuint modelMatrixLoc = glGetUniformLocation(shaderProgram.Program, "model");
+            // Send the View Matrix
+            view = camera.getViewMatrix();
+            viewMatrixLoc = glGetUniformLocation(cubeShader.Program, "view");
+            glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+            // Send the Perspective Matrix
+            perspective = glm::perspective(glm::radians(camera.fov), (GLfloat) WIDTH / (GLfloat) HEIGHT, 0.1f, 100.0f);
+            perspectiveMatrixLoc = glGetUniformLocation(cubeShader.Program, "perspective");
+            glUniformMatrix4fv(perspectiveMatrixLoc, 1, GL_FALSE, glm::value_ptr(perspective));
+
+            // Bind the Container Texture
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, containerTexture);
+            glUniform1i(glGetUniformLocation(cubeShader.Program, "containerTexture"), 0);
+
+            // Bind the Face Texture
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, faceTexture);
+            glUniform1i(glGetUniformLocation(cubeShader.Program, "faceTexture"), 1);
+
+            // Send the Mix Constant
+            glUniform1f(glGetUniformLocation(cubeShader.Program, "mixConstant"), mixConstant);
+
+            // Send colors
+            glUniform3f(glGetUniformLocation(cubeShader.Program, "objectColor"),
+                        1.0f, 0.5f, 0.31f);
+            glUniform3f(glGetUniformLocation(cubeShader.Program, "lightColor"),
+                        lightColor.x, lightColor.y, lightColor.z);
+
+            // Send the Model Matrix
+            model = glm::mat4();
+            modelMatrixLoc = glGetUniformLocation(cubeShader.Program, "model");
             glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, glm::value_ptr(model));
 
             // Draw
-            shaderProgram.Use();
             glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
+        glBindVertexArray(0);
+
+        // Draw Light
+        lightShader.Use();
+        glBindVertexArray(lightVAO);
+            // Send the View Matrix
+            view = camera.getViewMatrix();
+            viewMatrixLoc = glGetUniformLocation(lightShader.Program, "view");
+            glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+            // Send the Perspective Matrix
+            perspective = glm::perspective(glm::radians(camera.fov), (GLfloat) WIDTH / (GLfloat) HEIGHT, 0.1f, 100.0f);
+            perspectiveMatrixLoc = glGetUniformLocation(lightShader.Program, "perspective");
+            glUniformMatrix4fv(perspectiveMatrixLoc, 1, GL_FALSE, glm::value_ptr(perspective));
+
+            // Send colors
+            glUniform3f(glGetUniformLocation(lightShader.Program, "lightColor"),
+                        lightColor.x, lightColor.y, lightColor.z);
+
+            // Send the Model Matrix
+            model = glm::mat4();
+            model = glm::translate(model, glm::vec3(1.2f, 1.0f, 2.0f));
+            model = glm::scale(model, glm::vec3(0.2f));
+            modelMatrixLoc = glGetUniformLocation(lightShader.Program, "model");
+            glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, glm::value_ptr(model));
+            // Draw
+            glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
 
         // Swap the current color buffer out for the one just drawn
