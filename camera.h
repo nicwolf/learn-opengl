@@ -50,6 +50,7 @@ public:
 
     // Methods
     glm::mat4 getViewMatrix();
+    glm::mat4 computeViewMatrix(glm::vec3 position, glm::vec3 target, glm::vec3 up);
     void processKeyboard(CameraMovement direction, GLfloat deltaTime);
     void processMouseMovement(GLfloat xOff, GLfloat yOff,
                               GLboolean constrainPitch=true);
