@@ -1,21 +1,21 @@
 #version 330 core
 
 layout (location = 0) in vec3 position;
-layout (location = 1) in vec3 color;
-layout (location = 2) in vec2 texCoord;
+layout (location = 1) in vec3 normal;
 
-uniform vec3 offset;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 perspective;
 
-out vec3 vertexColor;
-out vec3 vertexPosition;
-out vec2 textureCoordinate;
+uniform vec3 lightPos;
+
+out vec3 LightPos;
+out vec3 FragPos;
+out vec3 Normal;
 
 void main() {
-    gl_Position = perspective * view * model * vec4(position + offset, 1.0);
-    vertexColor = color;
-    vertexPosition = gl_Position.xyz;
-    textureCoordinate = vec2(texCoord.s, 1.0f - texCoord.t);
+    gl_Position = perspective * view * model * vec4(position, 1.0);
+    FragPos     = vec3(view * model * vec4(position, 1.0));
+    Normal      = mat3(transpose(inverse(view * model))) * normal;
+    LightPos    = vec3(view * vec4(lightPos, 1.0));
 }
