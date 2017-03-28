@@ -3,11 +3,20 @@ in vec3 FragPos;
 in vec3 Normal;
 in vec3 LightPos;
 
-uniform vec3      objectColor;
-uniform vec3      lightColor;
-//uniform sampler2D containerTexture;
-//uniform sampler2D faceTexture;
-//uniform float     mixConstant;
+struct Light {
+    vec3 position;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+uniform Light light;
+struct Material {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float shininess;
+};
+uniform Material material;
 
 out vec4 color;
 
@@ -21,24 +30,22 @@ void main() {
 
     // Ambient
     float ambientStrength = 0.1f;
-    vec3 ambient = ambientStrength * lightColor;
+    vec3 ambient = light.ambient * material.ambient;
 
     // Diffuse
     float diffuseStrength;
     diffuseStrength = dot(lightDir, normal);
     diffuseStrength = max(diffuseStrength, 0.0);
-    vec3 diffuse = diffuseStrength * lightColor;
+    vec3 diffuse = light.diffuse * diffuseStrength * material.diffuse;
 
     // Specular
     vec3 lightReflectDir = reflect(-lightDir, normal);
     float specularStrength;
     specularStrength = dot(viewDir, lightReflectDir);
     specularStrength = max(specularStrength, 0.0);
-    specularStrength = pow(specularStrength, 32);
-    vec3 specular = specularStrength * lightColor;
+    specularStrength = pow(specularStrength, material.shininess);
+    vec3 specular = light.specular * specularStrength * material.specular;
 
-    vec3 result = (ambient + diffuse + specular) * objectColor;
+    vec3 result = ambient + diffuse + specular;
     color = vec4(result, 1.0f);
-//   color = mix(texture(containerTexture, textureCoordinate),
-//               texture(faceTexture     , textureCoordinate), mixConstant);
 }

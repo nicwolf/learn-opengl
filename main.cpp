@@ -244,7 +244,6 @@ int main(int argc, char *argv[])
         GLuint modelMatrixLoc;
 
         // Lighting
-        glm::vec3 lightColor = glm::vec3(1.0, 1.0, 1.0);
         glm::vec3 lightPos   = glm::vec3(1.2f, 1.0f, 2.0f);
 
         // Draw Cube
@@ -274,22 +273,41 @@ int main(int argc, char *argv[])
             glUniform1f(glGetUniformLocation(cubeShader.Program, "mixConstant"), mixConstant);
 
             // Send Uniforms
-            glUniform3f(glGetUniformLocation(cubeShader.Program, "objectColor"),
-                        1.0f,
-                        0.5f,
-                        0.31f);
-            glUniform3f(glGetUniformLocation(cubeShader.Program, "lightPos"),
-                        lightPos.x,
-                        lightPos.y,
-                        lightPos.z);
-            glUniform3f(glGetUniformLocation(cubeShader.Program, "lightColor"),
-                        lightColor.x,
-                        lightColor.y,
-                        lightColor.z);
-            glUniform3f(glGetUniformLocation(cubeShader.Program, "viewPos"),
-                        camera.position.x,
-                        camera.position.y,
-                        camera.position.z);
+            // -------------
+            // Material
+            GLint materialAmbientLoc   = glGetUniformLocation(cubeShader.Program, "material.ambient");
+            GLint materialDiffuseLoc   = glGetUniformLocation(cubeShader.Program, "material.diffuse");
+            GLint materialSpecularLoc  = glGetUniformLocation(cubeShader.Program, "material.specular");
+            GLint materialShininessLoc = glGetUniformLocation(cubeShader.Program, "material.shininess");
+
+            glUniform3f(materialAmbientLoc,   1.0f, 0.5f, 0.31f);
+            glUniform3f(materialDiffuseLoc,   1.0f, 0.5f, 0.31f);
+            glUniform3f(materialSpecularLoc,  0.5f, 0.5f, 0.5f);
+            glUniform1f(materialShininessLoc, 32.0f);
+
+            // Lighting
+            GLint lightPosLoc = glGetUniformLocation(cubeShader.Program, "lightPos");
+            GLint lightAmbientLoc  = glGetUniformLocation(cubeShader.Program, "light.ambient");
+            GLint lightDiffuseLoc  = glGetUniformLocation(cubeShader.Program, "light.diffuse");
+            GLint lightSpecularLoc = glGetUniformLocation(cubeShader.Program, "light.specular");
+
+            glm::vec3 lightColor;
+            lightColor.x = sin(currentFrame * 2.0f);
+            lightColor.y = sin(currentFrame * 0.7f);
+            lightColor.z = sin(currentFrame * 1.3f);
+
+            glm::vec3 lightDiffuseColor = lightColor * glm::vec3(0.5f);
+            glm::vec3 lightAmbientColor = lightDiffuseColor * glm::vec3(0.2f);
+
+            glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
+            glUniform3f(lightAmbientLoc,  lightAmbientColor.x, lightAmbientColor.y, lightAmbientColor.z);
+            glUniform3f(lightDiffuseLoc,  lightDiffuseColor.x, lightDiffuseColor.y, lightDiffuseColor.z);
+            glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
+
+            // Scene
+            GLint viewPosLoc = glGetUniformLocation(cubeShader.Program, "viewPos");
+
+            glUniform3f(viewPosLoc, camera.position.x, camera.position.y, camera.position.z);
 
             // Send the Model Matrix
             model = glm::mat4();

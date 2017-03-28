@@ -9,9 +9,9 @@ uniform mat4 perspective;
 
 uniform vec3 lightPos;
 
-out vec3 LightPos;
-out vec3 FragPos;
-out vec3 Normal;
+out vec3  LightPos;
+out vec3  FragPos;
+out vec3  Normal;
 
 void main() {
     gl_Position = perspective * view * model * vec4(position, 1.0);
