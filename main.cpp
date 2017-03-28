@@ -86,48 +86,49 @@ int main(int argc, char *argv[])
     // --------------------
     // Define the vertices for a cube
     GLfloat vertices[] = {
-        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            // Positions          // Normals           // Texture Coords
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
+             0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
+             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
+             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
 
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
+             0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
 
-        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+            -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+            -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
 
-         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+             0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
+             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+             0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
+             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
 
-        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
+             0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  1.0f,
+             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
+             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
 
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
-    };
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
+             0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  1.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
+        };
 
     // Setup Graphics Memory
     // ---------------------
@@ -147,49 +148,35 @@ int main(int argc, char *argv[])
 
     // Setup Textures
     // --------------
-    // We set up two different textures here and will interpolate
-    // between them according to the global `mixConstant`.
-    //
-    // First, we set up an image of a wooden container.
-    int containerImageWidth, containerImageHeight;
-    unsigned char* containerImage = SOIL_load_image("../learn-opengl/assets/container.jpg",
-                                           &containerImageWidth, &containerImageHeight,
-                                           0, SOIL_LOAD_RGB);
-    GLuint containerTexture;
-    glGenTextures(1, &containerTexture);
-    glBindTexture(GL_TEXTURE_2D, containerTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    float borderColor[] = { 1.0f, 1.0f, 0.0f, 1.0f };
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // Diffuse Map
+    int diffuseMapImgWidth, diffuseMapImgHeight;
+    const char* diffuseMapImgPath = "../learn-opengl/assets/diffuseMap.png";
+    unsigned char* diffuseMapImg = SOIL_load_image(diffuseMapImgPath, &diffuseMapImgWidth, &diffuseMapImgHeight, 0, SOIL_LOAD_RGB);
+    GLuint diffuseMap;
+    glGenTextures(1, & diffuseMap);
+    glBindTexture(GL_TEXTURE_2D, diffuseMap);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
-                 containerImageWidth, containerImageHeight,
-                 0, GL_RGB, GL_UNSIGNED_BYTE, containerImage);
+                 diffuseMapImgWidth, diffuseMapImgHeight,
+                 0, GL_RGB, GL_UNSIGNED_BYTE, diffuseMapImg);
     glGenerateMipmap(GL_TEXTURE_2D);
-    SOIL_free_image_data(containerImage);
+    SOIL_free_image_data(diffuseMapImg);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    // Second, we set up an image of a smiley face
-    int faceImageWidth, faceImageHeight;
-    unsigned char* faceImage = SOIL_load_image("../learn-opengl/assets/awesomeface.png",
-                                           &faceImageWidth, &faceImageHeight,
-                                           0, SOIL_LOAD_RGB);
-    GLuint faceTexture;
-    glGenTextures(1, &faceTexture);
-    glBindTexture(GL_TEXTURE_2D, faceTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // Diffuse Map
+    int specularMapImgWidth, specularMapImgHeight;
+    const char* specularMapImgPath = "../learn-opengl/assets/specularMap.png";
+    unsigned char* specularMapImg = SOIL_load_image(specularMapImgPath, &specularMapImgWidth, &specularMapImgHeight, 0, SOIL_LOAD_RGB);
+    GLuint specularMap;
+    glGenTextures(1, & specularMap);
+    glBindTexture(GL_TEXTURE_2D, specularMap);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
-                 faceImageWidth, faceImageHeight,
-                 0, GL_RGB, GL_UNSIGNED_BYTE, faceImage);
+                 specularMapImgWidth, specularMapImgHeight,
+                 0, GL_RGB, GL_UNSIGNED_BYTE, specularMapImg);
     glGenerateMipmap(GL_TEXTURE_2D);
-    SOIL_free_image_data(faceImage);
+    SOIL_free_image_data(specularMapImg);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Specular Map
 
     // Setup VAOs
     // ----------
@@ -198,17 +185,20 @@ int main(int argc, char *argv[])
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
         // Setup Attribute 0: Position
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*) 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*) 0);
         glEnableVertexAttribArray(0);
         // Setup Attribute 1: Normal
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*) (3 * sizeof(GLfloat)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*) (3 * sizeof(GLfloat)));
         glEnableVertexAttribArray(1);
+        // Setup Attribute 2: Tex Coords
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*) (6 * sizeof(GLfloat)));
+        glEnableVertexAttribArray(2);
     // Unbind the VAO
     glBindVertexArray(0);
 
     glBindVertexArray(lightVAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*) 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*) 0);
         glEnableVertexAttribArray(0);
     glBindVertexArray(0);
 
@@ -259,15 +249,15 @@ int main(int argc, char *argv[])
             perspectiveMatrixLoc = glGetUniformLocation(cubeShader.Program, "perspective");
             glUniformMatrix4fv(perspectiveMatrixLoc, 1, GL_FALSE, glm::value_ptr(perspective));
 
-            // Bind the Container Texture
+            // Bind the Diffuse Map
+            glUniform1i(glGetUniformLocation(cubeShader.Program, "material.diffuse"), 0);
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, containerTexture);
-            glUniform1i(glGetUniformLocation(cubeShader.Program, "containerTexture"), 0);
+            glBindTexture(GL_TEXTURE_2D, diffuseMap);
 
-            // Bind the Face Texture
+            // Bind the Specular Map
+            glUniform1i(glGetUniformLocation(cubeShader.Program, "material.specular"), 1);
             glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, faceTexture);
-            glUniform1i(glGetUniformLocation(cubeShader.Program, "faceTexture"), 1);
+            glBindTexture(GL_TEXTURE_2D, specularMap);
 
             // Send the Mix Constant
             glUniform1f(glGetUniformLocation(cubeShader.Program, "mixConstant"), mixConstant);
@@ -291,13 +281,9 @@ int main(int argc, char *argv[])
             GLint lightDiffuseLoc  = glGetUniformLocation(cubeShader.Program, "light.diffuse");
             GLint lightSpecularLoc = glGetUniformLocation(cubeShader.Program, "light.specular");
 
-            glm::vec3 lightColor;
-            lightColor.x = sin(currentFrame * 2.0f);
-            lightColor.y = sin(currentFrame * 0.7f);
-            lightColor.z = sin(currentFrame * 1.3f);
-
-            glm::vec3 lightDiffuseColor = lightColor * glm::vec3(0.5f);
-            glm::vec3 lightAmbientColor = lightDiffuseColor * glm::vec3(0.2f);
+            glm::vec3 lightColor(1.0f);
+            glm::vec3 lightDiffuseColor = lightColor * glm::vec3(0.8f);
+            glm::vec3 lightAmbientColor = lightColor * glm::vec3(0.2f);
 
             glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
             glUniform3f(lightAmbientLoc,  lightAmbientColor.x, lightAmbientColor.y, lightAmbientColor.z);
