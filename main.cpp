@@ -189,20 +189,6 @@ int main(int argc, char *argv[])
     SOIL_free_image_data(specularMapImg);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    // Emission Map
-//    int emissionMapImgWidth, emissionMapImgHeight;
-//    const char* emissionMapImgPath = "../learn-opengl/assets/emissionMap.jpg";
-//    unsigned char* emissionMapImg = SOIL_load_image(emissionMapImgPath, &emissionMapImgWidth, &emissionMapImgHeight, 0, SOIL_LOAD_RGB);
-//    GLuint emissionMap;
-//    glGenTextures(1, & emissionMap);
-//    glBindTexture(GL_TEXTURE_2D, emissionMap);
-//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
-//                 emissionMapImgWidth, emissionMapImgHeight,
-//                 0, GL_RGB, GL_UNSIGNED_BYTE, emissionMapImg);
-//    glGenerateMipmap(GL_TEXTURE_2D);
-//    SOIL_free_image_data(emissionMapImg);
-//    glBindTexture(GL_TEXTURE_2D, 0);
-
     // Setup VAOs
     // ----------
     glBindVertexArray(VAO);
@@ -234,6 +220,14 @@ int main(int argc, char *argv[])
     Shader lightShader("../learn-opengl/shaders/light.vert",
                        "../learn-opengl/shaders/light.frag");
 
+    // Lights
+    glm::vec3 pointLightPositions[] = {
+        glm::vec3( 0.7f,  0.2f,   2.0f),
+        glm::vec3( 2.3f, -3.3f,  -4.0f),
+        glm::vec3(-4.0f,  2.0f, -12.0f),
+        glm::vec3( 0.0f,  0.0f,  -3.0f)
+    };
+
     // Render Loop
     // -----------
     while(!glfwWindowShouldClose(window)) {
@@ -242,7 +236,7 @@ int main(int argc, char *argv[])
         do_movement();
 
         // Clear buffer
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.1f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Store the current time
@@ -257,9 +251,6 @@ int main(int argc, char *argv[])
         GLuint perspectiveMatrixLoc;
         glm::mat4 model;
         GLuint modelMatrixLoc;
-
-        // Lighting
-        glm::vec3 lightPos   = glm::vec3(1.2f, 1.0f, 2.0f);
 
         // Draw Cube
         cubeShader.Use();
@@ -284,14 +275,6 @@ int main(int argc, char *argv[])
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, specularMap);
 
-            // Bind the Emission Map
-            // glUniform1i(glGetUniformLocation(cubeShader.Program, "material.emission"), 2);
-            // glActiveTexture(GL_TEXTURE2);
-            // glBindTexture(GL_TEXTURE_2D, emissionMap);
-
-            // Send the Mix Constant
-            glUniform1f(glGetUniformLocation(cubeShader.Program, "mixConstant"), mixConstant);
-
             // Send Uniforms
             // -------------
             // Material
@@ -306,52 +289,122 @@ int main(int argc, char *argv[])
             glUniform1f(materialShininessLoc, 32.0f);
 
             // Lighting
-            //
-            // Point Light
-//            GLint lightPosLoc = glGetUniformLocation(cubeShader.Program, "pointLight.position");
-//            GLint lightAmbientLoc  = glGetUniformLocation(cubeShader.Program, "pointLight.ambient");
-//            GLint lightDiffuseLoc  = glGetUniformLocation(cubeShader.Program, "pointLight.diffuse");
-//            GLint lightSpecularLoc = glGetUniformLocation(cubeShader.Program, "pointLight.specular");
-//            GLint constantFallLoc  = glGetUniformLocation(cubeShader.Program, "pointLight.constantFalloff");
-//            GLint linearFallLoc    = glGetUniformLocation(cubeShader.Program, "pointLight.linearFalloff");
-//            GLint quadraticFallLoc = glGetUniformLocation(cubeShader.Program, "pointLight.quadraticFalloff");
+            // --------
+            // Directional Light
+            GLint lightDirectionLoc = glGetUniformLocation(cubeShader.Program, "dirLight.direction");
+            GLint lightAmbientLoc   = glGetUniformLocation(cubeShader.Program, "dirLight.ambient");
+            GLint lightDiffuseLoc   = glGetUniformLocation(cubeShader.Program, "dirLight.diffuse");
+            GLint lightSpecularLoc  = glGetUniformLocation(cubeShader.Program, "dirLight.specular");
 
-//            glm::vec3 lightColor(1.0f);
-//            glm::vec3 lightDiffuseColor = lightColor * glm::vec3(1.0f);
-//            glm::vec3 lightAmbientColor = lightColor * glm::vec3(0.2f);
+            glm::vec4 lightDirection = glm::transpose(glm::inverse(view * model)) * glm::vec4(0.2f, -0.2f, 0.0f, 1.0);
+            glUniform3f(lightDirectionLoc, lightDirection.x, lightDirection.y, lightDirection.z);
 
-//            glm::vec4 lightPosEye = view * glm::vec4(lightPos, 1.0);
-//            glUniform3f(lightPosLoc, lightPosEye.x, lightPosEye.y, lightPosEye.z);
-//            glUniform3f(lightAmbientLoc,  lightAmbientColor.x, lightAmbientColor.y, lightAmbientColor.z);
-//            glUniform3f(lightDiffuseLoc,  lightDiffuseColor.x, lightDiffuseColor.y, lightDiffuseColor.z);
-//            glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
-//            glUniform1f(constantFallLoc, 1.0f);
-//            glUniform1f(linearFallLoc, 0.09f);
-//            glUniform1f(quadraticFallLoc, 0.032f);
+            glUniform3f(lightAmbientLoc,  0.2f, 0.2f, 0.2f);
+            glUniform3f(lightDiffuseLoc,  0.3f, 0.3f, 0.3f);
+            glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
+
+            // Point Light #0
+            GLint lightPosLoc      = glGetUniformLocation(cubeShader.Program, "pointLights[0].position");
+            lightAmbientLoc  = glGetUniformLocation(cubeShader.Program, "pointLights[0].ambient");
+            lightDiffuseLoc  = glGetUniformLocation(cubeShader.Program, "pointLights[0].diffuse");
+            lightSpecularLoc = glGetUniformLocation(cubeShader.Program, "pointLights[0].specular");
+            GLint constantFallLoc  = glGetUniformLocation(cubeShader.Program, "pointLights[0].constantFalloff");
+            GLint linearFallLoc    = glGetUniformLocation(cubeShader.Program, "pointLights[0].linearFalloff");
+            GLint quadraticFallLoc = glGetUniformLocation(cubeShader.Program, "pointLights[0].quadraticFalloff");
+
+            glm::vec4 lightPosEye = view * glm::vec4(pointLightPositions[0], 1.0);
+            glUniform3f(lightPosLoc, lightPosEye.x, lightPosEye.y, lightPosEye.z);
+
+            glUniform3f(lightAmbientLoc,  0.1f, 0.1f, 0.1f);
+            glUniform3f(lightDiffuseLoc,  0.6f, 0.6f, 0.6f);
+            glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
+
+            glUniform1f(constantFallLoc,    1.0f);
+            glUniform1f(linearFallLoc,     0.09f);
+            glUniform1f(quadraticFallLoc, 0.032f);
+
+            // Point Light #1
+            lightPosLoc      = glGetUniformLocation(cubeShader.Program, "pointLights[1].position");
+            lightAmbientLoc  = glGetUniformLocation(cubeShader.Program, "pointLights[1].ambient");
+            lightDiffuseLoc  = glGetUniformLocation(cubeShader.Program, "pointLights[1].diffuse");
+            lightSpecularLoc = glGetUniformLocation(cubeShader.Program, "pointLights[1].specular");
+            constantFallLoc  = glGetUniformLocation(cubeShader.Program, "pointLights[1].constantFalloff");
+            linearFallLoc    = glGetUniformLocation(cubeShader.Program, "pointLights[1].linearFalloff");
+            quadraticFallLoc = glGetUniformLocation(cubeShader.Program, "pointLights[1].quadraticFalloff");
+
+            lightPosEye = view * glm::vec4(pointLightPositions[1], 1.0);
+            glUniform3f(lightPosLoc, lightPosEye.x, lightPosEye.y, lightPosEye.z);
+
+            glUniform3f(lightAmbientLoc,  0.1f, 0.1f, 0.1f);
+            glUniform3f(lightDiffuseLoc,  0.6f, 0.6f, 0.6f);
+            glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
+
+            glUniform1f(constantFallLoc,    1.0f);
+            glUniform1f(linearFallLoc,     0.09f);
+            glUniform1f(quadraticFallLoc, 0.032f);
+
+            // Point Light #2
+            lightPosLoc      = glGetUniformLocation(cubeShader.Program, "pointLights[2].position");
+            lightAmbientLoc  = glGetUniformLocation(cubeShader.Program, "pointLights[2].ambient");
+            lightDiffuseLoc  = glGetUniformLocation(cubeShader.Program, "pointLights[2].diffuse");
+            lightSpecularLoc = glGetUniformLocation(cubeShader.Program, "pointLights[2].specular");
+            constantFallLoc  = glGetUniformLocation(cubeShader.Program, "pointLights[2].constantFalloff");
+            linearFallLoc    = glGetUniformLocation(cubeShader.Program, "pointLights[2].linearFalloff");
+            quadraticFallLoc = glGetUniformLocation(cubeShader.Program, "pointLights[2].quadraticFalloff");
+
+            lightPosEye = view * glm::vec4(pointLightPositions[2], 1.0);
+            glUniform3f(lightPosLoc, lightPosEye.x, lightPosEye.y, lightPosEye.z);
+
+            glUniform3f(lightAmbientLoc,  0.1f, 0.1f, 0.1f);
+            glUniform3f(lightDiffuseLoc,  0.6f, 0.6f, 0.6f);
+            glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
+
+            glUniform1f(constantFallLoc,    1.0f);
+            glUniform1f(linearFallLoc,     0.09f);
+            glUniform1f(quadraticFallLoc, 0.032f);
+
+            // Point Light #3
+            lightPosLoc      = glGetUniformLocation(cubeShader.Program, "pointLights[3].position");
+            lightAmbientLoc  = glGetUniformLocation(cubeShader.Program, "pointLights[3].ambient");
+            lightDiffuseLoc  = glGetUniformLocation(cubeShader.Program, "pointLights[3].diffuse");
+            lightSpecularLoc = glGetUniformLocation(cubeShader.Program, "pointLights[3].specular");
+            constantFallLoc  = glGetUniformLocation(cubeShader.Program, "pointLights[3].constantFalloff");
+            linearFallLoc    = glGetUniformLocation(cubeShader.Program, "pointLights[3].linearFalloff");
+            quadraticFallLoc = glGetUniformLocation(cubeShader.Program, "pointLights[3].quadraticFalloff");
+
+            lightPosEye = view * glm::vec4(pointLightPositions[3], 1.0);
+            glUniform3f(lightPosLoc, lightPosEye.x, lightPosEye.y, lightPosEye.z);
+
+            glUniform3f(lightAmbientLoc,  0.1f, 0.1f, 0.1f);
+            glUniform3f(lightDiffuseLoc,  0.6f, 0.6f, 0.6f);
+            glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
+
+            glUniform1f(constantFallLoc,    1.0f);
+            glUniform1f(linearFallLoc,     0.09f);
+            glUniform1f(quadraticFallLoc, 0.032f);
 
             // Cone Light (Flashlight)
-            GLint lightPosLoc        = glGetUniformLocation(cubeShader.Program, "coneLight.position");
-            GLint lightAmbientLoc    = glGetUniformLocation(cubeShader.Program, "coneLight.ambient");
-            GLint lightDiffuseLoc    = glGetUniformLocation(cubeShader.Program, "coneLight.diffuse");
-            GLint lightSpecularLoc   = glGetUniformLocation(cubeShader.Program, "coneLight.specular");
-            GLint lightDirectionLoc  = glGetUniformLocation(cubeShader.Program, "coneLight.direction");
+            lightPosLoc        = glGetUniformLocation(cubeShader.Program, "coneLight.position");
+            lightAmbientLoc    = glGetUniformLocation(cubeShader.Program, "coneLight.ambient");
+            lightDiffuseLoc    = glGetUniformLocation(cubeShader.Program, "coneLight.diffuse");
+            lightSpecularLoc   = glGetUniformLocation(cubeShader.Program, "coneLight.specular");
+            lightDirectionLoc  = glGetUniformLocation(cubeShader.Program, "coneLight.direction");
+            constantFallLoc  = glGetUniformLocation(cubeShader.Program, "coneLight.constantFalloff");
+            linearFallLoc    = glGetUniformLocation(cubeShader.Program, "coneLight.linearFalloff");
+            quadraticFallLoc = glGetUniformLocation(cubeShader.Program, "coneLight.quadraticFalloff");
             GLint lightCutoffLoc     = glGetUniformLocation(cubeShader.Program, "coneLight.cutoff");
             GLint lightOuterCutoffLoc = glGetUniformLocation(cubeShader.Program, "coneLight.outerCutoff");
-            GLint constantFallLoc  = glGetUniformLocation(cubeShader.Program, "coneLight.constantFalloff");
-            GLint linearFallLoc    = glGetUniformLocation(cubeShader.Program, "coneLight.linearFalloff");
-            GLint quadraticFallLoc = glGetUniformLocation(cubeShader.Program, "coneLight.quadraticFalloff");
 
-            glm::vec3 lightColor(1.0f);
-            glm::vec3 lightDiffuseColor = lightColor * glm::vec3(1.0f);
-            glm::vec3 lightAmbientColor = lightColor * glm::vec3(0.2f);
+            glUniform3f(lightPosLoc,       0.0f, 0.0f,  0.0f);
+            glUniform3f(lightDirectionLoc, 0.0f, 0.0f, -1.0f);
 
-            glUniform3f(lightPosLoc, 0.0, 0.0, 0.0);
-            glUniform3f(lightDirectionLoc, 0.0, 0.0, -1.0);
-            glUniform3f(lightAmbientLoc,  lightAmbientColor.x, lightAmbientColor.y, lightAmbientColor.z);
-            glUniform3f(lightDiffuseLoc,  lightDiffuseColor.x, lightDiffuseColor.y, lightDiffuseColor.z);
+            glUniform3f(lightAmbientLoc,  0.1f, 0.1f, 0.1f);
+            glUniform3f(lightDiffuseLoc,  0.6f, 0.6f, 0.6f);
             glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
-            glUniform1f(lightCutoffLoc, glm::cos(glm::radians(12.5)));
+
+            glUniform1f(lightCutoffLoc,      glm::cos(glm::radians(12.5)));
             glUniform1f(lightOuterCutoffLoc, glm::cos(glm::radians(18.5)));
+
             glUniform1f(constantFallLoc, 1.0f);
             glUniform1f(linearFallLoc, 0.09f);
             glUniform1f(quadraticFallLoc, 0.032f);
@@ -378,30 +431,30 @@ int main(int argc, char *argv[])
         // Draw Light
         lightShader.Use();
         glBindVertexArray(lightVAO);
-            // Send the View Matrix
-            view = camera.getViewMatrix();
-            viewMatrixLoc = glGetUniformLocation(lightShader.Program, "view");
-            glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, glm::value_ptr(view));
+            for (int i = 0; i < 4; i ++) {
+                // Send the View Matrix
+                view = camera.getViewMatrix();
+                viewMatrixLoc = glGetUniformLocation(lightShader.Program, "view");
+                glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, glm::value_ptr(view));
 
-            // Send the Perspective Matrix
-            perspective = glm::perspective(glm::radians(camera.fov), (GLfloat) WIDTH / (GLfloat) HEIGHT, 0.1f, 100.0f);
-            perspectiveMatrixLoc = glGetUniformLocation(lightShader.Program, "perspective");
-            glUniformMatrix4fv(perspectiveMatrixLoc, 1, GL_FALSE, glm::value_ptr(perspective));
+                // Send the Perspective Matrix
+                perspective = glm::perspective(glm::radians(camera.fov), (GLfloat) WIDTH / (GLfloat) HEIGHT, 0.1f, 100.0f);
+                perspectiveMatrixLoc = glGetUniformLocation(lightShader.Program, "perspective");
+                glUniformMatrix4fv(perspectiveMatrixLoc, 1, GL_FALSE, glm::value_ptr(perspective));
 
-            // Send colors
-            glUniform3f(glGetUniformLocation(lightShader.Program, "lightColor"),
-                        lightColor.x, lightColor.y, lightColor.z);
+                // Send colors
+                glUniform3f(glGetUniformLocation(lightShader.Program, "lightColor"), 1.0f, 1.0f, 1.0f);
 
-            // Send the Model Matrix
-            model = glm::mat4();
-            model = glm::translate(model, lightPos);
-            model = glm::scale(model, glm::vec3(0.2f));
-            modelMatrixLoc = glGetUniformLocation(lightShader.Program, "model");
-            glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, glm::value_ptr(model));
-            // Draw
-//            glDrawArrays(GL_TRIANGLES, 0, 36);
+                // Send the Model Matrix
+                model = glm::mat4();
+                model = glm::translate(model, pointLightPositions[i]);
+                model = glm::scale(model, glm::vec3(0.2f));
+                modelMatrixLoc = glGetUniformLocation(lightShader.Program, "model");
+                glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, glm::value_ptr(model));
+                // Draw
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
         glBindVertexArray(0);
-
         // Swap the current color buffer out for the one just drawn
         glfwSwapBuffers(window);
     }
