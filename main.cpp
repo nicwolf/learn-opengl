@@ -86,49 +86,62 @@ int main(int argc, char *argv[])
     // --------------------
     // Define the vertices for a cube
     GLfloat vertices[] = {
-            // Positions          // Normals           // Texture Coords
-            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
-             0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
-             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-            -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  1.0f,
-            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
+        // Positions          // Normals           // Texture Coords
+        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
 
-            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-             0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f,
-             0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-             0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-            -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
-            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
 
-            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-            -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-            -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+        -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
 
-             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-             0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-             0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
+         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
 
-            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
-             0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  1.0f,
-             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-            -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  0.0f,
-            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  1.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
 
-            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
-             0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  1.0f,
-             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
-             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
-            -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
-            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
-        };
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  1.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
+    };
+
+    glm::vec3 cubePositions[] = {
+        glm::vec3( 0.0f,  0.0f,  0.0f),
+        glm::vec3( 2.0f,  5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3( 2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f,  3.0f, -7.5f),
+        glm::vec3( 1.3f, -2.0f, -2.5f),
+        glm::vec3( 1.5f,  2.0f, -2.5f),
+        glm::vec3( 1.5f,  0.2f, -1.5f),
+        glm::vec3(-1.3f,  1.0f, -1.5f)
+    };
 
     // Setup Graphics Memory
     // ---------------------
@@ -162,7 +175,7 @@ int main(int argc, char *argv[])
     SOIL_free_image_data(diffuseMapImg);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    // Diffuse Map
+    // Specular Map
     int specularMapImgWidth, specularMapImgHeight;
     const char* specularMapImgPath = "../learn-opengl/assets/specularMap.png";
     unsigned char* specularMapImg = SOIL_load_image(specularMapImgPath, &specularMapImgWidth, &specularMapImgHeight, 0, SOIL_LOAD_RGB);
@@ -176,7 +189,19 @@ int main(int argc, char *argv[])
     SOIL_free_image_data(specularMapImg);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    // Specular Map
+    // Emission Map
+//    int emissionMapImgWidth, emissionMapImgHeight;
+//    const char* emissionMapImgPath = "../learn-opengl/assets/emissionMap.jpg";
+//    unsigned char* emissionMapImg = SOIL_load_image(emissionMapImgPath, &emissionMapImgWidth, &emissionMapImgHeight, 0, SOIL_LOAD_RGB);
+//    GLuint emissionMap;
+//    glGenTextures(1, & emissionMap);
+//    glBindTexture(GL_TEXTURE_2D, emissionMap);
+//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+//                 emissionMapImgWidth, emissionMapImgHeight,
+//                 0, GL_RGB, GL_UNSIGNED_BYTE, emissionMapImg);
+//    glGenerateMipmap(GL_TEXTURE_2D);
+//    SOIL_free_image_data(emissionMapImg);
+//    glBindTexture(GL_TEXTURE_2D, 0);
 
     // Setup VAOs
     // ----------
@@ -259,6 +284,11 @@ int main(int argc, char *argv[])
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, specularMap);
 
+            // Bind the Emission Map
+            // glUniform1i(glGetUniformLocation(cubeShader.Program, "material.emission"), 2);
+            // glActiveTexture(GL_TEXTURE2);
+            // glBindTexture(GL_TEXTURE_2D, emissionMap);
+
             // Send the Mix Constant
             glUniform1f(glGetUniformLocation(cubeShader.Program, "mixConstant"), mixConstant);
 
@@ -276,19 +306,55 @@ int main(int argc, char *argv[])
             glUniform1f(materialShininessLoc, 32.0f);
 
             // Lighting
-            GLint lightPosLoc = glGetUniformLocation(cubeShader.Program, "lightPos");
-            GLint lightAmbientLoc  = glGetUniformLocation(cubeShader.Program, "light.ambient");
-            GLint lightDiffuseLoc  = glGetUniformLocation(cubeShader.Program, "light.diffuse");
-            GLint lightSpecularLoc = glGetUniformLocation(cubeShader.Program, "light.specular");
+            //
+            // Point Light
+//            GLint lightPosLoc = glGetUniformLocation(cubeShader.Program, "pointLight.position");
+//            GLint lightAmbientLoc  = glGetUniformLocation(cubeShader.Program, "pointLight.ambient");
+//            GLint lightDiffuseLoc  = glGetUniformLocation(cubeShader.Program, "pointLight.diffuse");
+//            GLint lightSpecularLoc = glGetUniformLocation(cubeShader.Program, "pointLight.specular");
+//            GLint constantFallLoc  = glGetUniformLocation(cubeShader.Program, "pointLight.constantFalloff");
+//            GLint linearFallLoc    = glGetUniformLocation(cubeShader.Program, "pointLight.linearFalloff");
+//            GLint quadraticFallLoc = glGetUniformLocation(cubeShader.Program, "pointLight.quadraticFalloff");
+
+//            glm::vec3 lightColor(1.0f);
+//            glm::vec3 lightDiffuseColor = lightColor * glm::vec3(1.0f);
+//            glm::vec3 lightAmbientColor = lightColor * glm::vec3(0.2f);
+
+//            glm::vec4 lightPosEye = view * glm::vec4(lightPos, 1.0);
+//            glUniform3f(lightPosLoc, lightPosEye.x, lightPosEye.y, lightPosEye.z);
+//            glUniform3f(lightAmbientLoc,  lightAmbientColor.x, lightAmbientColor.y, lightAmbientColor.z);
+//            glUniform3f(lightDiffuseLoc,  lightDiffuseColor.x, lightDiffuseColor.y, lightDiffuseColor.z);
+//            glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
+//            glUniform1f(constantFallLoc, 1.0f);
+//            glUniform1f(linearFallLoc, 0.09f);
+//            glUniform1f(quadraticFallLoc, 0.032f);
+
+            // Cone Light (Flashlight)
+            GLint lightPosLoc        = glGetUniformLocation(cubeShader.Program, "coneLight.position");
+            GLint lightAmbientLoc    = glGetUniformLocation(cubeShader.Program, "coneLight.ambient");
+            GLint lightDiffuseLoc    = glGetUniformLocation(cubeShader.Program, "coneLight.diffuse");
+            GLint lightSpecularLoc   = glGetUniformLocation(cubeShader.Program, "coneLight.specular");
+            GLint lightDirectionLoc  = glGetUniformLocation(cubeShader.Program, "coneLight.direction");
+            GLint lightCutoffLoc     = glGetUniformLocation(cubeShader.Program, "coneLight.cutoff");
+            GLint lightOuterCutoffLoc = glGetUniformLocation(cubeShader.Program, "coneLight.outerCutoff");
+            GLint constantFallLoc  = glGetUniformLocation(cubeShader.Program, "coneLight.constantFalloff");
+            GLint linearFallLoc    = glGetUniformLocation(cubeShader.Program, "coneLight.linearFalloff");
+            GLint quadraticFallLoc = glGetUniformLocation(cubeShader.Program, "coneLight.quadraticFalloff");
 
             glm::vec3 lightColor(1.0f);
-            glm::vec3 lightDiffuseColor = lightColor * glm::vec3(0.8f);
+            glm::vec3 lightDiffuseColor = lightColor * glm::vec3(1.0f);
             glm::vec3 lightAmbientColor = lightColor * glm::vec3(0.2f);
 
-            glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
+            glUniform3f(lightPosLoc, 0.0, 0.0, 0.0);
+            glUniform3f(lightDirectionLoc, 0.0, 0.0, -1.0);
             glUniform3f(lightAmbientLoc,  lightAmbientColor.x, lightAmbientColor.y, lightAmbientColor.z);
             glUniform3f(lightDiffuseLoc,  lightDiffuseColor.x, lightDiffuseColor.y, lightDiffuseColor.z);
             glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
+            glUniform1f(lightCutoffLoc, glm::cos(glm::radians(12.5)));
+            glUniform1f(lightOuterCutoffLoc, glm::cos(glm::radians(18.5)));
+            glUniform1f(constantFallLoc, 1.0f);
+            glUniform1f(linearFallLoc, 0.09f);
+            glUniform1f(quadraticFallLoc, 0.032f);
 
             // Scene
             GLint viewPosLoc = glGetUniformLocation(cubeShader.Program, "viewPos");
@@ -296,12 +362,17 @@ int main(int argc, char *argv[])
             glUniform3f(viewPosLoc, camera.position.x, camera.position.y, camera.position.z);
 
             // Send the Model Matrix
-            model = glm::mat4();
-            modelMatrixLoc = glGetUniformLocation(cubeShader.Program, "model");
-            glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, glm::value_ptr(model));
+            for (GLuint i = 0; i < 10; i ++) {
+                model = glm::mat4();
+                model = glm::translate(model, cubePositions[i]);
+                GLfloat angle = glm::radians(i * 20.0f);
+                model = glm::rotate(model, angle, glm::vec3(0.2, -0.4, 0.8));
+                modelMatrixLoc = glGetUniformLocation(cubeShader.Program, "model");
+                glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, glm::value_ptr(model));
+                // Draw
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
 
-            // Draw
-            glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
 
         // Draw Light
@@ -328,7 +399,7 @@ int main(int argc, char *argv[])
             modelMatrixLoc = glGetUniformLocation(lightShader.Program, "model");
             glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, glm::value_ptr(model));
             // Draw
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+//            glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
 
         // Swap the current color buffer out for the one just drawn
