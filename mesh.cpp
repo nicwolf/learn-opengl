@@ -35,7 +35,9 @@ void Mesh::Draw(Shader shader)
 
         const char * uniformName = ("material." + name + number).c_str();
         GLuint textureLoc = glGetUniformLocation(shader.Program, uniformName);
-        glUniform1f(textureLoc, i);
+        glUniform1i(textureLoc, i);
+        glUniform1f(glGetUniformLocation(shader.Program, "material.shininess"), 16.0f);
+        glBindTexture(GL_TEXTURE_2D, this->textures[i].id);
     }
     glActiveTexture(GL_TEXTURE0);
 
