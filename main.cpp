@@ -1,469 +1,305 @@
-#include <iostream>
-#include <math.h>
+
+
+// Std. Includes
+#include <string>
+
+// GLEW
+#define GLEW_STATIC
 #include <GL/glew.h>
+
+// GLFW
 #include <GLFW/glfw3.h>
-#include <SOIL.h>
+
+// GL includes
+#include "shader.h"
+#include "camera.h"
+
+// GLM Mathemtics
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <assimp/light.h>
 
-#include "shader.h"
-#include "camera.h"
-#include "model.h"
+// Other Libs
+#include <SOIL.h>
 
-using namespace std;
+// Properties
+GLuint screenWidth = 800, screenHeight = 600;
 
-// Function Prototypes
-void do_movement();
-void mouse_callback(GLFWwindow*, double xPos, double yPos);
-void scroll_callback(GLFWwindow* window, double xOff, double yOff);
+// Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
-float clip(float a, float min, float max);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void Do_Movement();
+GLuint loadTexture(GLchar* path);
 
-// Input Monitoring
-GLfloat mouseXLast = 400, mouseYLast = 300;
-bool firstMouseMovement = true;
+// Camera
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 bool keys[1024];
+GLfloat lastX = 400, lastY = 300;
+bool firstMouse = true;
+GLfloat near =   0.1f;
+GLfloat far  = 10.0f;
 
-// Camera Setup
-Camera camera(glm::vec3(0.5f, 1.0f, 4.0f));
-
-// Global Properties
-GLfloat mixConstant;
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 
-int main(int argc, char *argv[])
+// The MAIN function, from here we start our application and run our Game loop
+int main()
 {
-    // Administrivia
-    // -------------
-    // Initialize GLFW
+    // Init GLFW
     glfwInit();
-    // Configure GLFW
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-    const GLuint WIDTH  = 800;
-    const GLuint HEIGHT = 600;
 
-    // Window Setup
-    // ------------
-    // Create a window object
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", nullptr, nullptr);
-    if (window == nullptr) {
-        std::cout << "Failed to create GLFW window." << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-    // Make the window object we created the focus of the current context
+    GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "LearnOpenGL", nullptr, nullptr); // Windowed
     glfwMakeContextCurrent(window);
-    // Register our key callbacks
+
+    // Set the required callback functions
     glfwSetKeyCallback(window, key_callback);
-    // Capture Mouse
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
-    // GLEW Setup
-    // ----------
+    // Options
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    // Initialize GLEW to setup the OpenGL Function pointers
     glewExperimental = GL_TRUE;
-    if (glewInit() != GLEW_OK) {
-        std::cout << "Failed to initialize GLEW" << std::endl;
-        return -1;
-    }
+    glewInit();
 
-    // Viewport Setup
-    // --------------
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    glViewport(0, 0, width, height);
+    // Define the viewport dimensions
+    glViewport(0, 0, screenWidth, screenHeight);
 
-    // OpenGL Options
-    // --------------
+    // Setup some OpenGL options
     glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS); // Set to always pass the depth test (same effect as glDisable(GL_DEPTH_TEST))
 
-    // Create Geometry Data
-    // --------------------
-    // Define the vertices for a cube
+    // Setup and compile our shaders
+    Shader shader("../learn-opengl/shaders/depth.vert", "../learn-opengl/shaders/depth.frag");
+
+    #pragma region "object_initialization"
+    // Set the object data (buffers, vertex attributes)
     GLfloat cubeVertices[] = {
-        // Positions          // Normals           // Texture Coords
-        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
+        // Positions          // Texture Coords
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
 
-        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-        -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
 
-         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
 
-        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  1.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
 
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
+    GLfloat planeVertices[] = {
+        // Positions            // Texture Coords (note we set these higher than 1 that together with GL_REPEAT as texture wrapping mode will cause the floor texture to repeat)
+        5.0f,  -0.5f,  5.0f,  2.0f, 0.0f,
+        -5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
+        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
 
-    // Setup Graphics Memory
-    // ---------------------
-    // Generate a VBO
-    // This stores our vertex attributes.
-    GLuint VBO;
-    glGenBuffers(1, &VBO);
-
-    // Generate a Lighting VAO
-    GLuint lightVAO;
-    glGenVertexArrays(1, &lightVAO);
-
-    // Setup VAOs
-    // ----------
-    glBindVertexArray(lightVAO);
-        // Bind VBO into an OpenGL Array Buffer
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
-        // Setup Attribute 0: Position
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*) 0);
-        glEnableVertexAttribArray(0);
-    // Unbind the VAO
+        5.0f,  -0.5f,  5.0f,  2.0f, 0.0f,
+        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+        5.0f,  -0.5f, -5.0f,  2.0f, 2.0f
+    };
+    // Setup cube VAO
+    GLuint cubeVAO, cubeVBO;
+    glGenVertexArrays(1, &cubeVAO);
+    glGenBuffers(1, &cubeVBO);
+    glBindVertexArray(cubeVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glBindVertexArray(0);
+    // Setup plane VAO
+    GLuint planeVAO, planeVBO;
+    glGenVertexArrays(1, &planeVAO);
+    glGenBuffers(1, &planeVBO);
+    glBindVertexArray(planeVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
     glBindVertexArray(0);
 
-    // Light Settings
-    // --------------
-    glm::vec3 pointLightPositions[] = {
-        glm::vec3( 0.7f,  0.2f,   2.0f),
-        glm::vec3( 2.3f, -3.3f,  -4.0f),
-        glm::vec3(-4.0f,  2.0f, -12.0f),
-        glm::vec3( 0.0f,  0.0f,  -3.0f)
-    };
+    // Load textures
+    GLuint cubeTexture = loadTexture("../learn-opengl/assets/wall.jpg");
+    GLuint floorTexture = loadTexture("../learn-opengl/assets/container.jpg");
+    #pragma endregion
 
-    // Load Shaders
-    // ------------
-    Shader shader("../learn-opengl/shaders/nanosuit.vert",
-                  "../learn-opengl/shaders/nanosuit.frag");
-
-    Shader lightShader("../learn-opengl/shaders/light.vert",
-                       "../learn-opengl/shaders/light.frag");
-
-    // Load Models
-    // -----------
-    Model nanosuitModel = Model("../learn-opengl/assets/models/nanosuit/nanosuit.obj");
-
-    // Render Loop
-    // -----------
-    while(!glfwWindowShouldClose(window)) {
-        // Event Handling
-        // --------------
-        glfwPollEvents();
-        do_movement();
-
-        // Time Data
-        // ---------
+    // Game loop
+    while(!glfwWindowShouldClose(window))
+    {
+        // Set frame time
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        // Clear buffer
-        // ------------
-        glClearColor(0.1f, 0.2f, 0.2f, 1.0f);
+        // Check and call events
+        glfwPollEvents();
+        Do_Movement();
+
+        // Clear the colorbuffer
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Activate our Shader
-        // -------------------
+        // Draw objects
         shader.Use();
+            // Transformation Matrices
+            glm::mat4 model;
+            glm::mat4 view = camera.getViewMatrix();
+            glm::mat4 projection = glm::perspective(camera.fov, (float)screenWidth/(float)screenHeight, near, far);
+            glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+            glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-        // Transformation Matrices
-        // -----------------------
-        glm::mat4 view;
-        glm::mat4 perspective;
-        glm::mat4 model;
+            // Uniforms
+            GLuint nearClipLoc = glGetUniformLocation(shader.Program, "near");
+            GLuint farClipLoc  = glGetUniformLocation(shader.Program, "far");
 
-        view        = camera.getViewMatrix();
-        perspective = glm::perspective(glm::radians(camera.fov), (GLfloat) WIDTH / (GLfloat) HEIGHT, 0.1f, 100.0f);
-        model       = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
-        model       = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene
+            glUniform1f(nearClipLoc, near);
+            glUniform1f(farClipLoc, far);
 
-        GLuint viewMatrixLoc;
-        GLuint perspectiveMatrixLoc;
-        GLuint modelMatrixLoc;
+            // Cubes
+            glBindVertexArray(cubeVAO);
+            glBindTexture(GL_TEXTURE_2D, cubeTexture);  // We omit the glActiveTexture part since TEXTURE0 is already the default active texture unit. (sampler used in fragment is set to 0 as well as default)
+            model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+            glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+            model = glm::mat4();
+            model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+            glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
 
-        viewMatrixLoc        = glGetUniformLocation(shader.Program, "view");
-        perspectiveMatrixLoc = glGetUniformLocation(shader.Program, "perspective");
-        modelMatrixLoc       = glGetUniformLocation(shader.Program, "model");
+            // Floor
+            glBindVertexArray(planeVAO);
+            glBindTexture(GL_TEXTURE_2D, floorTexture);
+            model = glm::mat4();
+            glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(perspectiveMatrixLoc, 1, GL_FALSE, glm::value_ptr(perspective));
-        glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-        // Lighting
-        // --------
-        // Directional Light
-        GLint lightDirectionLoc = glGetUniformLocation(shader.Program, "dirLight.direction");
-        GLint lightAmbientLoc   = glGetUniformLocation(shader.Program, "dirLight.ambient");
-        GLint lightDiffuseLoc   = glGetUniformLocation(shader.Program, "dirLight.diffuse");
-        GLint lightSpecularLoc  = glGetUniformLocation(shader.Program, "dirLight.specular");
-
-        glm::vec4 lightDirection = glm::transpose(glm::inverse(view * model)) * glm::vec4(0.2f, -0.2f, 0.0f, 1.0);
-        glUniform3f(lightDirectionLoc, lightDirection.x, lightDirection.y, lightDirection.z);
-
-        glUniform3f(lightAmbientLoc,  0.2f, 0.2f, 0.2f);
-        glUniform3f(lightDiffuseLoc,  0.3f, 0.3f, 0.3f);
-        glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
-
-        // Point Light #0
-        GLint lightPosLoc      = glGetUniformLocation(shader.Program, "pointLights[0].position");
-        lightAmbientLoc  = glGetUniformLocation(shader.Program, "pointLights[0].ambient");
-        lightDiffuseLoc  = glGetUniformLocation(shader.Program, "pointLights[0].diffuse");
-        lightSpecularLoc = glGetUniformLocation(shader.Program, "pointLights[0].specular");
-        GLint constantFallLoc  = glGetUniformLocation(shader.Program, "pointLights[0].constantFalloff");
-        GLint linearFallLoc    = glGetUniformLocation(shader.Program, "pointLights[0].linearFalloff");
-        GLint quadraticFallLoc = glGetUniformLocation(shader.Program, "pointLights[0].quadraticFalloff");
-
-        glm::vec4 lightPosEye = view * glm::vec4(pointLightPositions[0], 1.0);
-        glUniform3f(lightPosLoc, lightPosEye.x, lightPosEye.y, lightPosEye.z);
-
-        glUniform3f(lightAmbientLoc,  0.1f, 0.1f, 0.1f);
-        glUniform3f(lightDiffuseLoc,  0.6f, 0.6f, 0.6f);
-        glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
-
-        glUniform1f(constantFallLoc,    1.0f);
-        glUniform1f(linearFallLoc,     0.09f);
-        glUniform1f(quadraticFallLoc, 0.032f);
-
-        // Point Light #1
-        lightPosLoc      = glGetUniformLocation(shader.Program, "pointLights[1].position");
-        lightAmbientLoc  = glGetUniformLocation(shader.Program, "pointLights[1].ambient");
-        lightDiffuseLoc  = glGetUniformLocation(shader.Program, "pointLights[1].diffuse");
-        lightSpecularLoc = glGetUniformLocation(shader.Program, "pointLights[1].specular");
-        constantFallLoc  = glGetUniformLocation(shader.Program, "pointLights[1].constantFalloff");
-        linearFallLoc    = glGetUniformLocation(shader.Program, "pointLights[1].linearFalloff");
-        quadraticFallLoc = glGetUniformLocation(shader.Program, "pointLights[1].quadraticFalloff");
-
-        lightPosEye = view * glm::vec4(pointLightPositions[1], 1.0);
-        glUniform3f(lightPosLoc, lightPosEye.x, lightPosEye.y, lightPosEye.z);
-
-        glUniform3f(lightAmbientLoc,  0.1f, 0.1f, 0.1f);
-        glUniform3f(lightDiffuseLoc,  0.6f, 0.6f, 0.6f);
-        glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
-
-        glUniform1f(constantFallLoc,    1.0f);
-        glUniform1f(linearFallLoc,     0.09f);
-        glUniform1f(quadraticFallLoc, 0.032f);
-
-        // Point Light #2
-        lightPosLoc      = glGetUniformLocation(shader.Program, "pointLights[2].position");
-        lightAmbientLoc  = glGetUniformLocation(shader.Program, "pointLights[2].ambient");
-        lightDiffuseLoc  = glGetUniformLocation(shader.Program, "pointLights[2].diffuse");
-        lightSpecularLoc = glGetUniformLocation(shader.Program, "pointLights[2].specular");
-        constantFallLoc  = glGetUniformLocation(shader.Program, "pointLights[2].constantFalloff");
-        linearFallLoc    = glGetUniformLocation(shader.Program, "pointLights[2].linearFalloff");
-        quadraticFallLoc = glGetUniformLocation(shader.Program, "pointLights[2].quadraticFalloff");
-
-        lightPosEye = view * glm::vec4(pointLightPositions[2], 1.0);
-        glUniform3f(lightPosLoc, lightPosEye.x, lightPosEye.y, lightPosEye.z);
-
-        glUniform3f(lightAmbientLoc,  0.1f, 0.1f, 0.1f);
-        glUniform3f(lightDiffuseLoc,  0.6f, 0.6f, 0.6f);
-        glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
-
-        glUniform1f(constantFallLoc,    1.0f);
-        glUniform1f(linearFallLoc,     0.09f);
-        glUniform1f(quadraticFallLoc, 0.032f);
-
-        // Point Light #3
-        lightPosLoc      = glGetUniformLocation(shader.Program, "pointLights[3].position");
-        lightAmbientLoc  = glGetUniformLocation(shader.Program, "pointLights[3].ambient");
-        lightDiffuseLoc  = glGetUniformLocation(shader.Program, "pointLights[3].diffuse");
-        lightSpecularLoc = glGetUniformLocation(shader.Program, "pointLights[3].specular");
-        constantFallLoc  = glGetUniformLocation(shader.Program, "pointLights[3].constantFalloff");
-        linearFallLoc    = glGetUniformLocation(shader.Program, "pointLights[3].linearFalloff");
-        quadraticFallLoc = glGetUniformLocation(shader.Program, "pointLights[3].quadraticFalloff");
-
-        lightPosEye = view * glm::vec4(pointLightPositions[3], 1.0);
-        glUniform3f(lightPosLoc, lightPosEye.x, lightPosEye.y, lightPosEye.z);
-
-        glUniform3f(lightAmbientLoc,  0.1f, 0.1f, 0.1f);
-        glUniform3f(lightDiffuseLoc,  0.6f, 0.6f, 0.6f);
-        glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
-
-        glUniform1f(constantFallLoc,    1.0f);
-        glUniform1f(linearFallLoc,     0.09f);
-        glUniform1f(quadraticFallLoc, 0.032f);
-
-        // Cone Light (Flashlight)
-        lightPosLoc        = glGetUniformLocation(shader.Program, "coneLight.position");
-        lightAmbientLoc    = glGetUniformLocation(shader.Program, "coneLight.ambient");
-        lightDiffuseLoc    = glGetUniformLocation(shader.Program, "coneLight.diffuse");
-        lightSpecularLoc   = glGetUniformLocation(shader.Program, "coneLight.specular");
-        lightDirectionLoc  = glGetUniformLocation(shader.Program, "coneLight.direction");
-        constantFallLoc  = glGetUniformLocation(shader.Program, "coneLight.constantFalloff");
-        linearFallLoc    = glGetUniformLocation(shader.Program, "coneLight.linearFalloff");
-        quadraticFallLoc = glGetUniformLocation(shader.Program, "coneLight.quadraticFalloff");
-        GLint lightCutoffLoc     = glGetUniformLocation(shader.Program, "coneLight.cutoff");
-        GLint lightOuterCutoffLoc = glGetUniformLocation(shader.Program, "coneLight.outerCutoff");
-
-        glUniform3f(lightPosLoc,       0.0f, 0.0f,  0.0f);
-        glUniform3f(lightDirectionLoc, 0.0f, 0.0f, -1.0f);
-
-        glUniform3f(lightAmbientLoc,  0.1f, 0.1f, 0.1f);
-        glUniform3f(lightDiffuseLoc,  0.6f, 0.6f, 0.6f);
-        glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
-
-        glUniform1f(lightCutoffLoc,      glm::cos(glm::radians(12.5)));
-        glUniform1f(lightOuterCutoffLoc, glm::cos(glm::radians(18.5)));
-
-        glUniform1f(constantFallLoc, 1.0f);
-        glUniform1f(linearFallLoc, 0.09f);
-        glUniform1f(quadraticFallLoc, 0.032f);
-
-        // Draw
-        // ----
-        // Models
-        nanosuitModel.Draw(shader);
-
-        // Lights
-        lightShader.Use();
-        glBindVertexArray(lightVAO);
-            for (int i = 0; i < 4; i ++) {
-                // Send the View Matrix
-                view = camera.getViewMatrix();
-                viewMatrixLoc = glGetUniformLocation(lightShader.Program, "view");
-                glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, glm::value_ptr(view));
-
-                // Send the Perspective Matrix
-                perspective = glm::perspective(glm::radians(camera.fov), (GLfloat) WIDTH / (GLfloat) HEIGHT, 0.1f, 100.0f);
-                perspectiveMatrixLoc = glGetUniformLocation(lightShader.Program, "perspective");
-                glUniformMatrix4fv(perspectiveMatrixLoc, 1, GL_FALSE, glm::value_ptr(perspective));
-
-                // Send colors
-                glUniform3f(glGetUniformLocation(lightShader.Program, "lightColor"), 1.0f, 1.0f, 1.0f);
-
-                // Send the Model Matrix
-                model = glm::mat4();
-                model = glm::translate(model, pointLightPositions[i]);
-                model = glm::scale(model, glm::vec3(0.2f));
-                modelMatrixLoc = glGetUniformLocation(lightShader.Program, "model");
-                glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, glm::value_ptr(model));
-                // Draw
-                glDrawArrays(GL_TRIANGLES, 0, 36);
-            }
         glBindVertexArray(0);
 
-        // Swap the current color buffer out for the one just drawn
+        // Swap the buffers
         glfwSwapBuffers(window);
     }
 
-    // Clean Up
-    // --------
     glfwTerminate();
-
-    // Exit
-    // ----
     return 0;
 }
 
-void do_movement() {
-    GLfloat cameraSpeed = 5.0f * deltaTime;
-    if (keys[GLFW_KEY_W]) {
+// This function loads a texture from file. Note: texture loading functions like these are usually
+// managed by a 'Resource Manager' that manages all resources (like textures, models, audio).
+// For learning purposes we'll just define it as a utility function.
+GLuint loadTexture(GLchar* path)
+{
+    //Generate texture ID and load texture data
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    int width,height;
+    unsigned char* image = SOIL_load_image(path, &width, &height, 0, SOIL_LOAD_RGB);
+    // Assign texture to ID
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    // Parameters
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    SOIL_free_image_data(image);
+    return textureID;
+
+}
+
+#pragma region "User input"
+
+// Moves/alters the camera positions based on user input
+void Do_Movement()
+{
+    // Camera controls
+    if(keys[GLFW_KEY_W])
         camera.processKeyboard(FORWARD, deltaTime);
-    }
-
-    if (keys[GLFW_KEY_S]) {
+    if(keys[GLFW_KEY_S])
         camera.processKeyboard(BACKWARD, deltaTime);
-    }
-
-    if (keys[GLFW_KEY_A]) {
+    if(keys[GLFW_KEY_A])
         camera.processKeyboard(LEFT, deltaTime);
-    }
-    if (keys[GLFW_KEY_D]) {
+    if(keys[GLFW_KEY_D])
         camera.processKeyboard(RIGHT, deltaTime);
-    }
 }
 
-void key_callback(GLFWwindow* window, int key, int scandcode, int action, int mode) {
-    if (action == GLFW_PRESS) {
-        keys[key] = true;
-    }
-    else if (action == GLFW_RELEASE) {
-        keys[key] = false;
-    }
-    // "ESCAPE" Key prompts the window to close at the start of the next loop.
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+// Is called whenever a key is pressed/released via GLFW
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
+{
+    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
-    }
-    // "W" Key toggles between solid and wireframe polygon mode.
-    if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
-        // This tripped me up for a second --- fetching GL_POLYGON_MODE returns
-        // two integers, one for the front and one for the back of polygons.
-        // Each face can have a different mode.
-        GLint polygonMode[2];
-        glGetIntegerv(GL_POLYGON_MODE, polygonMode);
-        if (polygonMode[0] == GL_FILL) {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        }
-        if (polygonMode[0] == GL_LINE) {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
-    }
-    if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
-        mixConstant += 0.08;
-        mixConstant = clip(mixConstant, 0.0, 1.0);
-    }
-    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
-        mixConstant -= 0.08;
-        mixConstant = clip(mixConstant, 0.0, 1.0);
-    }
+
+    if(action == GLFW_PRESS)
+        keys[key] = true;
+    else if(action == GLFW_RELEASE)
+        keys[key] = false;
 }
 
-void mouse_callback(GLFWwindow* window, double xPos, double yPos) {
-    if (firstMouseMovement) {
-        mouseXLast = xPos;
-        mouseYLast = yPos;
-        firstMouseMovement = false;
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    if(firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
     }
-    GLfloat xOff = xPos - mouseXLast;
-    GLfloat yOff = mouseYLast - yPos;
-    mouseXLast = xPos;
-    mouseYLast = yPos;
 
-    GLfloat sensitivity = 0.05;
-    xOff *= sensitivity;
-    yOff *= sensitivity;
+    GLfloat xoffset = xpos - lastX;
+    GLfloat yoffset = lastY - ypos;
 
-    camera.processMouseMovement(xOff, yOff);
+    lastX = xpos;
+    lastY = ypos;
+
+    camera.processMouseMovement(xoffset, yoffset);
 }
 
-void scroll_callback(GLFWwindow* window, double xOff, double yOff) {
-    camera.processMouseScroll(yOff);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    camera.processMouseScroll(yoffset);
 }
 
-float clip(float a, float min, float max) {
-    return a <= min ? min : a >= max ? max : a;
-}
+#pragma endregion
+
