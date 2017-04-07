@@ -74,9 +74,11 @@ int main()
     // Setup some OpenGL options
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS); // Set to always pass the depth test (same effect as glDisable(GL_DEPTH_TEST))
+    glEnable(GL_STENCIL_TEST);
 
     // Setup and compile our shaders
     Shader shader("../learn-opengl/shaders/depth.vert", "../learn-opengl/shaders/depth.frag");
+    Shader outlineShader("../learn-opengl/shaders/outline.vert", "../learn-opengl/shaders/outline.frag");
 
     #pragma region "object_initialization"
     // Set the object data (buffers, vertex attributes)
@@ -146,6 +148,7 @@ int main()
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
     glBindVertexArray(0);
+
     // Setup plane VAO
     GLuint planeVAO, planeVBO;
     glGenVertexArrays(1, &planeVAO);
@@ -178,9 +181,12 @@ int main()
 
         // Clear the colorbuffer
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClearStencil(0x00);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         // Draw objects
+        glEnable(GL_DEPTH_TEST);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
         shader.Use();
             // Transformation Matrices
             glm::mat4 model;
@@ -192,13 +198,23 @@ int main()
             // Uniforms
             GLuint nearClipLoc = glGetUniformLocation(shader.Program, "near");
             GLuint farClipLoc  = glGetUniformLocation(shader.Program, "far");
-
             glUniform1f(nearClipLoc, near);
             glUniform1f(farClipLoc, far);
 
+            // Floor
+            glStencilFunc(GL_ALWAYS, 0x00, 0xFF);
+            glStencilMask(0xFF);
+            glBindVertexArray(planeVAO);
+            glBindTexture(GL_TEXTURE_2D, floorTexture);
+            model = glm::mat4();
+            glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+
             // Cubes
+            glStencilFunc(GL_ALWAYS, 0x01, 0xFF);
+            glStencilMask(0xFF);
             glBindVertexArray(cubeVAO);
-            glBindTexture(GL_TEXTURE_2D, cubeTexture);  // We omit the glActiveTexture part since TEXTURE0 is already the default active texture unit. (sampler used in fragment is set to 0 as well as default)
+            glBindTexture(GL_TEXTURE_2D, cubeTexture);
             model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
             glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
             glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -206,15 +222,34 @@ int main()
             model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
             glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
             glDrawArrays(GL_TRIANGLES, 0, 36);
-
-            // Floor
-            glBindVertexArray(planeVAO);
-            glBindTexture(GL_TEXTURE_2D, floorTexture);
-            model = glm::mat4();
-            glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-
         glBindVertexArray(0);
+
+        // Draw Outlines
+        glStencilFunc(GL_NOTEQUAL, 0x01, 0xFF);
+        glStencilMask(0x00);
+        glDisable(GL_DEPTH_TEST);
+        outlineShader.Use();
+            // Transformation Matrices
+            view = camera.getViewMatrix();
+            projection = glm::perspective(camera.fov, (float)screenWidth/(float)screenHeight, near, far);
+            glUniformMatrix4fv(glGetUniformLocation(outlineShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+            glUniformMatrix4fv(glGetUniformLocation(outlineShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+            // Cubes
+            glBindVertexArray(cubeVAO);
+            glBindTexture(GL_TEXTURE_2D, cubeTexture);
+            model = glm::mat4();
+            model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+            model = glm::scale(model, glm::vec3(1.1));
+            glUniformMatrix4fv(glGetUniformLocation(outlineShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+            model = glm::mat4();
+            model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+            model = glm::scale(model, glm::vec3(1.1));
+            glUniformMatrix4fv(glGetUniformLocation(outlineShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+        glStencilMask(0xFF);
 
         // Swap the buffers
         glfwSwapBuffers(window);
