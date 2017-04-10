@@ -78,22 +78,23 @@ int main()
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CW);
+    glCullFace(GL_BACK);
 
     // Setup and compile our shaders
     Shader shader("../learn-opengl/shaders/depth.vert", "../learn-opengl/shaders/depth.frag");
-    Shader outlineShader("../learn-opengl/shaders/outline.vert", "../learn-opengl/shaders/outline.frag");
-    Shader windowShader("../learn-opengl/shaders/blend.vert", "../learn-opengl/shaders/blend.frag");
 
     #pragma region "object_initialization"
     // Set the object data (buffers, vertex attributes)
     GLfloat cubeVertices[] = {
         // Positions          // Texture Coords
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
          0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
         -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
 
         -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
          0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
@@ -109,12 +110,12 @@ int main()
         -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
         -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
 
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
          0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
          0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
 
         -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
          0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
@@ -123,40 +124,13 @@ int main()
         -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
         -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
 
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
          0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
          0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
          0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f
     };
-    GLfloat planeVertices[] = {
-        // Positions            // Texture Coords (note we set these higher than 1 that together with GL_REPEAT as texture wrapping mode will cause the floor texture to repeat)
-        5.0f,  -0.5f,  5.0f,  2.0f, 0.0f,
-        -5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
-        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
-
-        5.0f,  -0.5f,  5.0f,  2.0f, 0.0f,
-        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
-        5.0f,  -0.5f, -5.0f,  2.0f, 2.0f
-    };
-
-    GLfloat grassVertices[] = {
-        // Positions        // Texture
-        -0.5f,  1.0f, 0.0f, 0.0f, 0.0f, // Top Left
-        -0.5f,  0.0f, 0.0f, 0.0f, 1.0f, // Bottom Left
-         0.5f,  0.0f, 0.0f, 1.0f, 1.0f, // Bottom Right
-        -0.5f,  1.0f, 0.0f, 0.0f, 0.0f, // Top Left
-         0.5f,  0.0f, 0.0f, 1.0f, 1.0f, // Bottom Right
-         0.5f,  1.0f, 0.0f, 1.0f, 0.0f  // Top Right
-    };
-
-    std::vector<glm::vec3> windowPositions;
-    windowPositions.push_back(glm::vec3(-1.0f,  -0.5f, -0.48f));
-    windowPositions.push_back(glm::vec3( 2.0f,  -0.5f,  0.51f));
-    windowPositions.push_back(glm::vec3( 0.5f,  -0.5f,   0.7f));
-    windowPositions.push_back(glm::vec3( 0.2f,  -0.5f,  -2.3f));
-    windowPositions.push_back(glm::vec3( 1.0f,  -0.5f,  -0.6f));
 
     // Setup cube VAO
     GLuint cubeVAO, cubeVBO;
@@ -171,36 +145,8 @@ int main()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
     glBindVertexArray(0);
 
-    // Setup plane VAO
-    GLuint planeVAO, planeVBO;
-    glGenVertexArrays(1, &planeVAO);
-    glGenBuffers(1, &planeVBO);
-    glBindVertexArray(planeVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-    glBindVertexArray(0);
-
-    // Setup grass VAO
-    GLuint grassVAO, grassVBO;
-    glGenVertexArrays(1, &grassVAO);
-    glGenBuffers(1, &grassVBO);
-    glBindVertexArray(grassVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, grassVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(grassVertices), grassVertices, GL_STATIC_DRAW);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3*sizeof(GLfloat)));
-    glBindVertexArray(0);
-
     // Load textures
     GLuint cubeTexture = loadTexture("../learn-opengl/assets/wall.jpg", false);
-    GLuint floorTexture = loadTexture("../learn-opengl/assets/container.jpg", false);
-    GLuint windowTexture = loadTexture("../learn-opengl/assets/window.png", true);
 
     #pragma endregion
 
@@ -236,44 +182,14 @@ int main()
             glUniform1f(nearClipLoc, near);
             glUniform1f(farClipLoc, far);
 
-            // Floor
-            glBindVertexArray(planeVAO);
-            glBindTexture(GL_TEXTURE_2D, floorTexture);
-            model = glm::mat4();
-            glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-
             // Cubes
             glBindVertexArray(cubeVAO);
             glBindTexture(GL_TEXTURE_2D, cubeTexture);
-            model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
-            glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            glDrawArrays(GL_TRIANGLES, 0, 36);
             model = glm::mat4();
-            model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+            model = glm::rotate(model, glm::radians(30.0f), glm::vec3(0.5, 0.5, 0.0));
             glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
             glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
-
-        windowShader.Use();
-        // Draw Windows
-        glUniformMatrix4fv(glGetUniformLocation(windowShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(glGetUniformLocation(windowShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-        glBindVertexArray(grassVAO);
-        glBindTexture(GL_TEXTURE_2D, windowTexture);
-        std::map<float, glm::vec3> sortedWindows;
-        for (GLuint i = 0; i < windowPositions.size(); i ++)
-        {
-            GLfloat distance = glm::length(camera.position - windowPositions[i]);
-            sortedWindows[distance] = windowPositions[i];
-        }
-        for (std::map<float, glm::vec3>::reverse_iterator iter = sortedWindows.rbegin(); iter != sortedWindows.rend(); ++iter)
-        {
-            model = glm::mat4();
-            model = glm::translate(model, iter->second);
-            glUniformMatrix4fv(glGetUniformLocation(windowShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-        }
 
         // Swap the buffers
         glfwSwapBuffers(window);
