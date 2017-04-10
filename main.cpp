@@ -2,6 +2,7 @@
 
 // Std. Includes
 #include <string>
+#include <map>
 
 // GLEW
 #define GLEW_STATIC
@@ -30,7 +31,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void Do_Movement();
-GLuint loadTexture(GLchar* path);
+GLuint loadTexture(GLchar* path, GLboolean alpha);
 
 // Camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -75,10 +76,13 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS); // Set to always pass the depth test (same effect as glDisable(GL_DEPTH_TEST))
     glEnable(GL_STENCIL_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Setup and compile our shaders
     Shader shader("../learn-opengl/shaders/depth.vert", "../learn-opengl/shaders/depth.frag");
     Shader outlineShader("../learn-opengl/shaders/outline.vert", "../learn-opengl/shaders/outline.frag");
+    Shader windowShader("../learn-opengl/shaders/blend.vert", "../learn-opengl/shaders/blend.frag");
 
     #pragma region "object_initialization"
     // Set the object data (buffers, vertex attributes)
@@ -136,6 +140,24 @@ int main()
         -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
         5.0f,  -0.5f, -5.0f,  2.0f, 2.0f
     };
+
+    GLfloat grassVertices[] = {
+        // Positions        // Texture
+        -0.5f,  1.0f, 0.0f, 0.0f, 0.0f, // Top Left
+        -0.5f,  0.0f, 0.0f, 0.0f, 1.0f, // Bottom Left
+         0.5f,  0.0f, 0.0f, 1.0f, 1.0f, // Bottom Right
+        -0.5f,  1.0f, 0.0f, 0.0f, 0.0f, // Top Left
+         0.5f,  0.0f, 0.0f, 1.0f, 1.0f, // Bottom Right
+         0.5f,  1.0f, 0.0f, 1.0f, 0.0f  // Top Right
+    };
+
+    std::vector<glm::vec3> windowPositions;
+    windowPositions.push_back(glm::vec3(-1.0f,  -0.5f, -0.48f));
+    windowPositions.push_back(glm::vec3( 2.0f,  -0.5f,  0.51f));
+    windowPositions.push_back(glm::vec3( 0.5f,  -0.5f,   0.7f));
+    windowPositions.push_back(glm::vec3( 0.2f,  -0.5f,  -2.3f));
+    windowPositions.push_back(glm::vec3( 1.0f,  -0.5f,  -0.6f));
+
     // Setup cube VAO
     GLuint cubeVAO, cubeVBO;
     glGenVertexArrays(1, &cubeVAO);
@@ -162,9 +184,24 @@ int main()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
     glBindVertexArray(0);
 
+    // Setup grass VAO
+    GLuint grassVAO, grassVBO;
+    glGenVertexArrays(1, &grassVAO);
+    glGenBuffers(1, &grassVBO);
+    glBindVertexArray(grassVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, grassVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(grassVertices), grassVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3*sizeof(GLfloat)));
+    glBindVertexArray(0);
+
     // Load textures
-    GLuint cubeTexture = loadTexture("../learn-opengl/assets/wall.jpg");
-    GLuint floorTexture = loadTexture("../learn-opengl/assets/container.jpg");
+    GLuint cubeTexture = loadTexture("../learn-opengl/assets/wall.jpg", false);
+    GLuint floorTexture = loadTexture("../learn-opengl/assets/container.jpg", false);
+    GLuint windowTexture = loadTexture("../learn-opengl/assets/window.png", true);
+
     #pragma endregion
 
     // Game loop
@@ -181,12 +218,10 @@ int main()
 
         // Clear the colorbuffer
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClearStencil(0x00);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Draw objects
         glEnable(GL_DEPTH_TEST);
-        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
         shader.Use();
             // Transformation Matrices
             glm::mat4 model;
@@ -202,8 +237,6 @@ int main()
             glUniform1f(farClipLoc, far);
 
             // Floor
-            glStencilFunc(GL_ALWAYS, 0x00, 0xFF);
-            glStencilMask(0xFF);
             glBindVertexArray(planeVAO);
             glBindTexture(GL_TEXTURE_2D, floorTexture);
             model = glm::mat4();
@@ -211,8 +244,6 @@ int main()
             glDrawArrays(GL_TRIANGLES, 0, 6);
 
             // Cubes
-            glStencilFunc(GL_ALWAYS, 0x01, 0xFF);
-            glStencilMask(0xFF);
             glBindVertexArray(cubeVAO);
             glBindTexture(GL_TEXTURE_2D, cubeTexture);
             model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
@@ -224,32 +255,25 @@ int main()
             glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
 
-        // Draw Outlines
-        glStencilFunc(GL_NOTEQUAL, 0x01, 0xFF);
-        glStencilMask(0x00);
-        glDisable(GL_DEPTH_TEST);
-        outlineShader.Use();
-            // Transformation Matrices
-            view = camera.getViewMatrix();
-            projection = glm::perspective(camera.fov, (float)screenWidth/(float)screenHeight, near, far);
-            glUniformMatrix4fv(glGetUniformLocation(outlineShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-            glUniformMatrix4fv(glGetUniformLocation(outlineShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-
-            // Cubes
-            glBindVertexArray(cubeVAO);
-            glBindTexture(GL_TEXTURE_2D, cubeTexture);
+        windowShader.Use();
+        // Draw Windows
+        glUniformMatrix4fv(glGetUniformLocation(windowShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(windowShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glBindVertexArray(grassVAO);
+        glBindTexture(GL_TEXTURE_2D, windowTexture);
+        std::map<float, glm::vec3> sortedWindows;
+        for (GLuint i = 0; i < windowPositions.size(); i ++)
+        {
+            GLfloat distance = glm::length(camera.position - windowPositions[i]);
+            sortedWindows[distance] = windowPositions[i];
+        }
+        for (std::map<float, glm::vec3>::reverse_iterator iter = sortedWindows.rbegin(); iter != sortedWindows.rend(); ++iter)
+        {
             model = glm::mat4();
-            model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
-            model = glm::scale(model, glm::vec3(1.1));
-            glUniformMatrix4fv(glGetUniformLocation(outlineShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-            model = glm::mat4();
-            model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-            model = glm::scale(model, glm::vec3(1.1));
-            glUniformMatrix4fv(glGetUniformLocation(outlineShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        glBindVertexArray(0);
-        glStencilMask(0xFF);
+            model = glm::translate(model, iter->second);
+            glUniformMatrix4fv(glGetUniformLocation(windowShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
 
         // Swap the buffers
         glfwSwapBuffers(window);
@@ -262,27 +286,26 @@ int main()
 // This function loads a texture from file. Note: texture loading functions like these are usually
 // managed by a 'Resource Manager' that manages all resources (like textures, models, audio).
 // For learning purposes we'll just define it as a utility function.
-GLuint loadTexture(GLchar* path)
+GLuint loadTexture(GLchar* path, GLboolean alpha)
 {
     //Generate texture ID and load texture data
     GLuint textureID;
     glGenTextures(1, &textureID);
     int width,height;
-    unsigned char* image = SOIL_load_image(path, &width, &height, 0, SOIL_LOAD_RGB);
+    unsigned char* image = SOIL_load_image(path, &width, &height, 0, alpha ? SOIL_LOAD_RGBA : SOIL_LOAD_RGB);
     // Assign texture to ID
     glBindTexture(GL_TEXTURE_2D, textureID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    glTexImage2D(GL_TEXTURE_2D, 0, alpha ? GL_RGBA : GL_RGB, width, height, 0, alpha ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, image);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     // Parameters
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, alpha ? GL_CLAMP_TO_EDGE : GL_REPEAT );	// Use GL_CLAMP_TO_EDGE to prevent semi-transparent borders. Due to interpolation it takes value from next repeat
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, alpha ? GL_CLAMP_TO_EDGE : GL_REPEAT );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
     SOIL_free_image_data(image);
     return textureID;
-
 }
 
 #pragma region "User input"
