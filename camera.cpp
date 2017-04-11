@@ -36,9 +36,33 @@ glm::mat4 Camera::getViewMatrix()
                                    this->up);
 }
 
+glm::mat4 Camera::getBackViewMatrix()
+{
+    return this->computeBackViewMatrix(this->position,
+                                   this->position + this->front,
+                                   this->up);
+}
+
 glm::mat4 Camera::computeViewMatrix(glm::vec3 position, glm::vec3 target, glm::vec3 up)
 {
     glm::vec3 zAxis = glm::normalize(position - target);
+    glm::vec3 xAxis = glm::normalize(glm::cross(up, zAxis));
+    glm::vec3 yAxis = glm::cross(zAxis, xAxis);
+
+    glm::mat4 lookAt(1.0f);
+    lookAt[0] = glm::vec4(xAxis.x, yAxis.x, zAxis.x, 0.0f);
+    lookAt[1] = glm::vec4(xAxis.y, yAxis.y, zAxis.y, 0.0f);
+    lookAt[2] = glm::vec4(xAxis.z, yAxis.z, zAxis.z, 0.0f);
+
+    glm::mat4 transform(1.0f);
+    transform[3] = glm::vec4(-position, 1.0f);
+
+    return lookAt * transform;
+}
+
+glm::mat4 Camera::computeBackViewMatrix(glm::vec3 position, glm::vec3 target, glm::vec3 up)
+{
+    glm::vec3 zAxis = glm::normalize(target - position);
     glm::vec3 xAxis = glm::normalize(glm::cross(up, zAxis));
     glm::vec3 yAxis = glm::cross(zAxis, xAxis);
 
