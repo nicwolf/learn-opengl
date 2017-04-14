@@ -78,6 +78,7 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_CULL_FACE);
+    glEnable(GL_PROGRAM_POINT_SIZE);
 
     // Setup and compile our shaders
     Shader shader("../learn-opengl/shaders/environmentmap.vert", "../learn-opengl/shaders/environmentmap.frag");
@@ -202,6 +203,21 @@ int main()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*) 0);
     glBindVertexArray(0);
 
+    // Setup Transformation Matrices UBO
+    GLuint transUBOIndex = glGetUniformBlockIndex(shader.Program, "Matrices");
+    glUniformBlockBinding(shader.Program, transUBOIndex, 0);
+    transUBOIndex = glGetUniformBlockIndex(skyboxShader.Program, "Matrices");
+    glUniformBlockBinding(shader.Program, transUBOIndex, 0);
+
+    GLuint transUBO;
+    glGenBuffers(1, &transUBO);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, transUBO);
+    glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, transUBO);
+
     // Load Cubemap
     GLuint cubemap;
     glGenTextures(1, &cubemap);
@@ -244,39 +260,32 @@ int main()
 
         // Rendering Administrivia
         glm::mat4 model;
-        glm::mat4 view;
-        glm::mat4 projection;
+        glm::mat4 view = camera.getViewMatrix();
+        glm::mat4 projection = glm::perspective(camera.fov, (float)screenWidth/(float)screenHeight, near, far);;
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glBindBuffer(GL_UNIFORM_BUFFER, transUBO);
+        glBufferSubData(GL_UNIFORM_BUFFER,  0, 64, glm::value_ptr(view));
+        glBufferSubData(GL_UNIFORM_BUFFER, 64, 64, glm::value_ptr(projection));
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
         shader.Use();
             // Transformation Matrices
             model = glm::mat4();
-            view = camera.getViewMatrix();
-            projection = glm::perspective(camera.fov, (float)screenWidth/(float)screenHeight, near, far);
-            glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-            glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-
             // Uniforms
             glUniform3f(glGetUniformLocation(shader.Program, "cameraPos"), camera.position.x, camera.position.y, camera.position.z);
-
             // Cubes
             glBindVertexArray(cubeVAO);
             model = glm::mat4();
-//            model = glm::rotate(model, glm::radians(30.0f), glm::vec3(0.0, 1.0, 0.0));
             glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
             glDrawArrays(GL_TRIANGLES, 0, 36);
+
         glBindVertexArray(0);
 
         // Render Skybox
         glDepthFunc(GL_LEQUAL);
         skyboxShader.Use();
         glBindVertexArray(skyboxVAO);
-                // Transformation Matrices
-                view = glm::mat4(glm::mat3(camera.getViewMatrix()));
-                projection = glm::perspective(camera.fov, (float)screenWidth / (float)screenHeight, near, far);
-                glUniformMatrix4fv(glGetUniformLocation(skyboxShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-                glUniformMatrix4fv(glGetUniformLocation(skyboxShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
                 // Textures
                 glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -346,6 +355,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
         if (*polygonMode == GL_FILL)
+        {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+        }
+        if (*polygonMode == GL_POINT)
         {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         }
