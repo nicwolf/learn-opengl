@@ -38,7 +38,7 @@ bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
 GLfloat near =   0.1f;
-GLfloat far  = 10.0f;
+GLfloat far  = 100.0f;
 
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
@@ -75,14 +75,17 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS); // Set to always pass the depth test (same effect as glDisable(GL_DEPTH_TEST))
     glEnable(GL_STENCIL_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_CULL_FACE);
+//    glEnable(GL_BLEND);
+//    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//    glDisable(GL_CULL_FACE);
     glEnable(GL_PROGRAM_POINT_SIZE);
 
     // Setup and compile our shaders
-    Shader shader("../learn-opengl/shaders/environmentmap.vert", "../learn-opengl/shaders/environmentmap.frag");
-    Shader skyboxShader("../learn-opengl/shaders/skybox.vert", "../learn-opengl/shaders/skybox.frag");
+    Shader shader("../learn-opengl/shaders/exploding.vert",
+                  "../learn-opengl/shaders/exploding.frag");
+    Shader normalShader("../learn-opengl/shaders/normalvis.vert",
+                        "../learn-opengl/shaders/normalvis.frag",
+                        "../learn-opengl/shaders/normalvis.geom");
 
     #pragma region "object_initialization"
 
@@ -131,52 +134,6 @@ int main()
         -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f
     };
 
-    GLfloat skyboxVertices[] = {
-        // Positions
-         1.0f, -1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-
-         1.0f, -1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-
-        -1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-
-        -1.0f, -1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-        -1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f, -1.0f,
-
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f
-    };
-
     // Setup cube VAO
     GLuint cubeVAO, cubeVBO;
     glGenVertexArrays(1, &cubeVAO);
@@ -192,22 +149,11 @@ int main()
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
     glBindVertexArray(0);
 
-    // Setup skybox VAO
-    GLuint skyboxVAO, skyboxVBO;
-    glGenVertexArrays(1, &skyboxVAO);
-    glGenBuffers(1, &skyboxVBO);
-    glBindVertexArray(skyboxVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*) 0);
-    glBindVertexArray(0);
-
     // Setup Transformation Matrices UBO
     GLuint transUBOIndex = glGetUniformBlockIndex(shader.Program, "Matrices");
     glUniformBlockBinding(shader.Program, transUBOIndex, 0);
-    transUBOIndex = glGetUniformBlockIndex(skyboxShader.Program, "Matrices");
-    glUniformBlockBinding(shader.Program, transUBOIndex, 0);
+    transUBOIndex = glGetUniformBlockIndex(normalShader.Program, "Matrices");
+    glUniformBlockBinding(normalShader.Program, transUBOIndex, 0);
 
     GLuint transUBO;
     glGenBuffers(1, &transUBO);
@@ -273,6 +219,7 @@ int main()
             // Transformation Matrices
             model = glm::mat4();
             // Uniforms
+            glUniform1f(glGetUniformLocation(shader.Program, "time"), currentFrame);
             glUniform3f(glGetUniformLocation(shader.Program, "cameraPos"), camera.position.x, camera.position.y, camera.position.z);
             // Cubes
             glBindVertexArray(cubeVAO);
@@ -282,15 +229,19 @@ int main()
 
         glBindVertexArray(0);
 
-        // Render Skybox
-        glDepthFunc(GL_LEQUAL);
-        skyboxShader.Use();
-        glBindVertexArray(skyboxVAO);
-                // Textures
-                glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap);
-                glDrawArrays(GL_TRIANGLES, 0, 36);
+        normalShader.Use();
+            // Transformation Matrices
+            model = glm::mat4();
+            // Uniforms
+            glUniform1f(glGetUniformLocation(shader.Program, "time"), currentFrame);
+            glUniform3f(glGetUniformLocation(shader.Program, "cameraPos"), camera.position.x, camera.position.y, camera.position.z);
+            // Cubes
+            glBindVertexArray(cubeVAO);
+            model = glm::mat4();
+            glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+
         glBindVertexArray(0);
-        glDepthFunc(GL_LESS);
 
         // Swap the buffers
         glfwSwapBuffers(window);
@@ -390,7 +341,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    camera.processMouseScroll(yoffset);
+//    camera.processMouseScroll(yoffset);
 }
 
 #pragma endregion

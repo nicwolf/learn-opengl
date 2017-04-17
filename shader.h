@@ -15,6 +15,7 @@ public:
     GLuint Program;
     // Constructor for reading and building the shader
     Shader(const char* vertexPath, const char* fragmentPath);
+    Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath);
     // Use the Program
     void Use();
 };
