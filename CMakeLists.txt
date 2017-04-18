@@ -3,6 +3,10 @@ cmake_minimum_required(VERSION 2.8)
 aux_source_directory(. SRC_LIST)
 add_executable(${PROJECT_NAME}
     ${SRC_LIST}
+    shaders/planet.frag
+    shaders/planet.vert
+    shaders/instancing.frag
+    shaders/instancing.vert
     shaders/normalvis.frag
     shaders/normalvis.vert
     shaders/normalvis.geom

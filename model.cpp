@@ -16,6 +16,14 @@ void Model::Draw(Shader shader)
     }
 }
 
+void Model::DrawInstanced(Shader shader, GLuint instanceCount)
+{
+    for (GLuint i = 0; i < this->meshes.size(); i ++)
+    {
+        this->meshes[i].DrawInstanced(shader, instanceCount);
+    }
+}
+
 void Model::loadModel(std::string path)
 {
     Assimp::Importer importer;

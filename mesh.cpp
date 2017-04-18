@@ -11,6 +11,41 @@ Mesh::Mesh(std::vector<Vertex>  vertices,
     this->setupMesh();
 }
 
+void Mesh::DrawInstanced(Shader shader, GLuint instanceCount)
+{
+    GLuint diffuseNr  = 1;
+    GLuint specularNr = 1;
+    for (GLuint i = 0; i < this->textures.size(); i ++)
+    {
+        glActiveTexture(GL_TEXTURE0 + i);
+        // Retrieve Texture Number
+        std::stringstream ss;
+        std::string number;
+        std::string name;
+        name = this->textures[i].type;
+        if (name == "texture_diffuse")
+        {
+            ss << diffuseNr++;
+        }
+        else if (name == "texture_specular")
+        {
+            ss << specularNr++;
+        }
+        number = ss.str();
+
+        const char * uniformName = ("material." + name + number).c_str();
+        GLuint textureLoc = glGetUniformLocation(shader.Program, uniformName);
+        glUniform1i(textureLoc, i);
+        glUniform1f(glGetUniformLocation(shader.Program, "material.shininess"), 16.0f);
+        glBindTexture(GL_TEXTURE_2D, this->textures[i].id);
+    }
+    glActiveTexture(GL_TEXTURE0);
+
+    glBindVertexArray(this->VAO);
+    glDrawElementsInstanced(GL_TRIANGLES, this->indices.size(), GL_UNSIGNED_INT, 0, instanceCount);
+    glBindVertexArray(0);
+}
+
 void Mesh::Draw(Shader shader)
 {
     GLuint diffuseNr  = 1;

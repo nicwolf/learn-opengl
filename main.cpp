@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <random>
 
 // GLEW
 #define GLEW_STATIC
@@ -13,11 +14,13 @@
 // GL includes
 #include "shader.h"
 #include "camera.h"
+#include "model.h"
 
 // GLM Mathemtics
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/constants.hpp>
 
 // Other Libs
 #include <SOIL.h>
@@ -30,22 +33,31 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void Do_Movement();
+void setWindowFPS(GLFWwindow* window);
 GLuint loadTexture(GLchar* path, GLboolean alpha);
 
 // Camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 0.0f));
 bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
-GLfloat near =   0.1f;
-GLfloat far  = 100.0f;
+GLfloat near =   0.01f;
+GLfloat far  = 30.0f;
 
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
+GLuint nbFrames = 0;
+GLfloat lastTime = 0.0f;
 
 // The MAIN function, from here we start our application and run our Game loop
 int main()
 {
+    // Administrivia
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::normal_distribution<> normalDist(0, 1);
+    std::uniform_real_distribution<> uniformDist(-1, 1);
+
     // Init GLFW
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -75,122 +87,83 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS); // Set to always pass the depth test (same effect as glDisable(GL_DEPTH_TEST))
     glEnable(GL_STENCIL_TEST);
-//    glEnable(GL_BLEND);
-//    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-//    glDisable(GL_CULL_FACE);
     glEnable(GL_PROGRAM_POINT_SIZE);
 
     // Setup and compile our shaders
-    Shader shader("../learn-opengl/shaders/exploding.vert",
-                  "../learn-opengl/shaders/exploding.frag");
-    Shader normalShader("../learn-opengl/shaders/normalvis.vert",
-                        "../learn-opengl/shaders/normalvis.frag",
-                        "../learn-opengl/shaders/normalvis.geom");
+    Shader shader("../learn-opengl/shaders/planet.vert",
+                  "../learn-opengl/shaders/planet.frag");
+    Shader asteroidShader("../learn-opengl/shaders/instancing.vert",
+                          "../learn-opengl/shaders/instancing.frag");
 
-    #pragma region "object_initialization"
+    // Load Models
+    Model planet   = Model("../learn-opengl/assets/models/planet/planet.obj");
+    Model asteroid = Model("../learn-opengl/assets/models/rock/rock.obj");
 
-    GLfloat cubeVertices[] = {
-        // Positions         // Normals  // Texture Coords
-         0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f,
+    // Setup Instancing
+    GLuint nrAsteroids = 10000;
+    glm::mat4 asteroidModelMatrices[nrAsteroids];
+    GLfloat ringRadius = 10.0;
+    GLfloat avgPeriod = 30.0;
+    for (GLuint i = 0; i < nrAsteroids; i++) {
+        glm::mat4 model = glm::mat4();
 
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f,
+        GLfloat TWO_PI = 2 * glm::pi<float>();
+        GLfloat angle = TWO_PI * (GLfloat)i / (GLfloat)nrAsteroids;
 
-        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
+        GLfloat x = cos(angle) * ringRadius;
+        x += 1.3 * normalDist(gen);
+        GLfloat z = sin(angle) * ringRadius;
+        z += 1.3 * normalDist(gen);
+        GLfloat y = 0.3 * normalDist(gen);
+        glm::vec3 location = glm::vec3(x, y, z);
 
-         0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f,
+        GLfloat rX, rY, rZ;
+        rX = uniformDist(gen);
+        rY = uniformDist(gen);
+        rZ = uniformDist(gen);
 
-        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f,
+        GLfloat scale;
+        scale = uniformDist(gen) * 0.05;
 
-         0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f
-    };
+        model = glm::translate(model, location);
+        model = glm::scale(model, glm::vec3(scale));
+        model = glm::rotate(model, glm::radians(30.0f), glm::vec3(rX, rY, rZ));
+        asteroidModelMatrices[i] = model;
 
-    // Setup cube VAO
-    GLuint cubeVAO, cubeVBO;
-    glGenVertexArrays(1, &cubeVAO);
-    glGenBuffers(1, &cubeVBO);
-    glBindVertexArray(cubeVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
-    glBindVertexArray(0);
+    }
+    GLuint instanceBuffer;
+    glGenBuffers(1, &instanceBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceBuffer);
+    glBufferData(GL_ARRAY_BUFFER, nrAsteroids * sizeof(glm::mat4), &asteroidModelMatrices[0], GL_STATIC_DRAW);
+    for (GLuint i = 0; i < asteroid.meshes.size(); i++) {
+        glBindVertexArray(asteroid.meshes[i].VAO);
+        GLsizei vec4Size = sizeof(glm::vec4);
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*)0);
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*) vec4Size);
+        glEnableVertexAttribArray(5);
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*) (2 * vec4Size));
+        glEnableVertexAttribArray(6);
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (GLvoid*) (3 * vec4Size));
+        glVertexAttribDivisor(3, 1);
+        glVertexAttribDivisor(4, 1);
+        glVertexAttribDivisor(5, 1);
+        glVertexAttribDivisor(6, 1);
+        glBindVertexArray(0);
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
 
     // Setup Transformation Matrices UBO
     GLuint transUBOIndex = glGetUniformBlockIndex(shader.Program, "Matrices");
     glUniformBlockBinding(shader.Program, transUBOIndex, 0);
-    transUBOIndex = glGetUniformBlockIndex(normalShader.Program, "Matrices");
-    glUniformBlockBinding(normalShader.Program, transUBOIndex, 0);
-
     GLuint transUBO;
     glGenBuffers(1, &transUBO);
-
     glBindBuffer(GL_UNIFORM_BUFFER, transUBO);
     glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, transUBO);
-
-    // Load Cubemap
-    GLuint cubemap;
-    glGenTextures(1, &cubemap);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap);
-    std::vector<const char*> cubemapFaces = {
-        "../learn-opengl/assets/hw_crater/craterlake_rt.png",
-        "../learn-opengl/assets/hw_crater/craterlake_lf.png",
-        "../learn-opengl/assets/hw_crater/craterlake_up.png",
-        "../learn-opengl/assets/hw_crater/craterlake_dn.png",
-        "../learn-opengl/assets/hw_crater/craterlake_bk.png",
-        "../learn-opengl/assets/hw_crater/craterlake_ft.png"
-    };
-    int cubemapWidth, cubemapHeight;
-    unsigned char* image;
-    for (GLuint i = 0; i < cubemapFaces.size(); i++)
-    {
-        image = SOIL_load_image(cubemapFaces[i], &cubemapWidth, &cubemapHeight, 0, SOIL_LOAD_RGB);
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                     0, GL_RGB, cubemapWidth, cubemapHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-    }
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-    #pragma endregion
 
     // Game loop
     while(!glfwWindowShouldClose(window))
@@ -200,46 +173,35 @@ int main()
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
+        setWindowFPS(window);
+
         // Check and call events
         glfwPollEvents();
         Do_Movement();
 
         // Rendering Administrivia
-        glm::mat4 model;
-        glm::mat4 view = camera.getViewMatrix();
-        glm::mat4 projection = glm::perspective(camera.fov, (float)screenWidth/(float)screenHeight, near, far);;
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         glBindBuffer(GL_UNIFORM_BUFFER, transUBO);
-        glBufferSubData(GL_UNIFORM_BUFFER,  0, 64, glm::value_ptr(view));
-        glBufferSubData(GL_UNIFORM_BUFFER, 64, 64, glm::value_ptr(projection));
+            glm::mat4 view = camera.getViewMatrix();
+            glm::mat4 projection = glm::perspective(camera.fov, (float)screenWidth/(float)screenHeight, near, far);
+            glBufferSubData(GL_UNIFORM_BUFFER,  0, 64, glm::value_ptr(view));
+            glBufferSubData(GL_UNIFORM_BUFFER, 64, 64, glm::value_ptr(projection));
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+        glm::mat4 model;
 
         shader.Use();
             // Transformation Matrices
             model = glm::mat4();
-            // Uniforms
-            glUniform1f(glGetUniformLocation(shader.Program, "time"), currentFrame);
-            glUniform3f(glGetUniformLocation(shader.Program, "cameraPos"), camera.position.x, camera.position.y, camera.position.z);
-            // Cubes
-            glBindVertexArray(cubeVAO);
-            model = glm::mat4();
-            glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            model = glm::translate(model, glm::vec3(0.0f, -1.0f, 0.0f));
+            GLuint modelLocation = glGetUniformLocation(shader.Program, "model");
+            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
+            planet.Draw(shader);
 
-        glBindVertexArray(0);
-
-        normalShader.Use();
-            // Transformation Matrices
-            model = glm::mat4();
-            // Uniforms
-            glUniform1f(glGetUniformLocation(shader.Program, "time"), currentFrame);
-            glUniform3f(glGetUniformLocation(shader.Program, "cameraPos"), camera.position.x, camera.position.y, camera.position.z);
-            // Cubes
-            glBindVertexArray(cubeVAO);
-            model = glm::mat4();
-            glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+        asteroidShader.Use();
+            asteroid.DrawInstanced(asteroidShader, nrAsteroids);
 
         glBindVertexArray(0);
 
@@ -342,6 +304,22 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 //    camera.processMouseScroll(yoffset);
+}
+
+void setWindowFPS(GLFWwindow* window)
+{
+    double currentTime = glfwGetTime();
+    nbFrames++;
+
+    if (currentTime - lastTime >= 1.0) {
+        char title[256];
+        title[255] = '\0';
+
+        snprintf(title, 255, "[FPS: %3.2f]", (float)nbFrames * 1.0f);
+        glfwSetWindowTitle(window, title);
+        nbFrames = 0;
+        lastTime += 1.0;
+    }
 }
 
 #pragma endregion

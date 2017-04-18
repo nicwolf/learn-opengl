@@ -19,8 +19,9 @@ class Model
 public:
     Model(GLchar* path);
     void Draw(Shader shader);
-private:
+    void DrawInstanced(Shader shader, GLuint instanceCount);
     std::vector<Mesh> meshes;
+private:
     std::string directory;
     void loadModel(std::string path);
     void processNode(aiNode* node, const aiScene* scene);

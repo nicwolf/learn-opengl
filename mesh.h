@@ -31,8 +31,9 @@ public:
          std::vector<GLuint> indices,
          std::vector<Texture> textures);
     void Draw(Shader shader);
-private:
+    void DrawInstanced(Shader shader, GLuint instanceCount);
     GLuint VAO, VBO, EBO;
+private:
     void setupMesh();
 };
 
