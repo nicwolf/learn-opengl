@@ -40,20 +40,20 @@ void main()
     vec3 convolvedColor = vec3(0.0);
 
     // Sharpen
-//    float sharpenKernel[9] = float[] (
-//        -1, -1, -1,
-//        -1,  9, -1,
-//        -1, -1, -1
-//    );
-//    for (int i = 0; i < 9; i++)
-//    {
-//        sampleTex[i] = vec3(texture(screenTexture, uv.st + offsets[i]));
-//    }
-//    for (int i = 0; i < 9; i++)
-//    {
-//        convolvedColor += sampleTex[i] * sharpenKernel[i];
-//    }
-//    fragColor = vec4(convolvedColor, 1.0);
+    float sharpenKernel[9] = float[] (
+        -1, -1, -1,
+        -1,  9, -1,
+        -1, -1, -1
+    );
+    for (int i = 0; i < 9; i++)
+    {
+        sampleTex[i] = vec3(texture(screenTexture, uv.st + offsets[i]));
+    }
+    for (int i = 0; i < 9; i++)
+    {
+        convolvedColor += sampleTex[i] * sharpenKernel[i];
+    }
+    fragColor = vec4(convolvedColor, 1.0);
 
     // Blur
 //    float blurKernel[9] = float[] (
@@ -89,7 +89,7 @@ void main()
 //    fragColor = vec4(convolvedColor, 1.0);
 
     // Solid Color
-    // fragColor = vec4(1.0);
+//     fragColor = vec4(1.0);
 
-    fragColor = texColor;
+//    fragColor = texColor;
 }

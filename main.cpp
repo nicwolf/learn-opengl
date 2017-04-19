@@ -88,19 +88,95 @@ int main()
     glDepthFunc(GL_LESS); // Set to always pass the depth test (same effect as glDisable(GL_DEPTH_TEST))
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_PROGRAM_POINT_SIZE);
+    glEnable(GL_MULTISAMPLE);
 
     // Setup and compile our shaders
     Shader shader("../learn-opengl/shaders/planet.vert",
                   "../learn-opengl/shaders/planet.frag");
     Shader asteroidShader("../learn-opengl/shaders/instancing.vert",
                           "../learn-opengl/shaders/instancing.frag");
+    Shader screenShader("../learn-opengl/shaders/screen.vert",
+                        "../learn-opengl/shaders/screen.frag");
 
     // Load Models
     Model planet   = Model("../learn-opengl/assets/models/planet/planet.obj");
     Model asteroid = Model("../learn-opengl/assets/models/rock/rock.obj");
 
+    // Setup Postprocess Framebuffer
+    // =============================
+    GLuint postFBO;
+    glGenFramebuffers(1, &postFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, postFBO);
+
+    // With Texture:
+    // -------------
+    GLuint postTex;
+    glGenTextures(1, &postTex);
+    glBindTexture(GL_TEXTURE_2D, postTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, screenWidth, screenHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postTex, 0);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cout << "ERROR :: FRAMEBUFFER :: Post Framebuffer not complete!" << std::endl;
+    }
+
+    // Setup Multisample Framebuffer
+    // =============================
+    GLuint fbo;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    // With Texture:
+    // -------------
+    GLuint tex;
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, tex);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGB, screenWidth, screenHeight, GL_TRUE);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, tex, 0);
+
+    // With Renderbuffer
+    // -----------------
+    GLuint rbo;
+    glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, screenWidth, screenHeight);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cout << "ERROR :: FRAMEBUFFER :: Framebuffer not complete!" << std::endl;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // Setup Postprocessing
+    GLfloat screenVertices[] = {
+        // Position // Texture
+        -1.0, -1.0, 0.0, 0.0, 0.0,
+         1.0,  1.0, 0.0, 1.0, 1.0,
+        -1.0,  1.0, 0.0, 0.0, 1.0,
+        -1.0, -1.0, 0.0, 0.0, 0.0,
+         1.0, -1.0, 0.0, 1.0, 0.0,
+         1.0,  1.0, 0.0, 1.0, 1.0
+    };
+    GLuint screenVAO, screenVBO;
+    glGenVertexArrays(1, &screenVAO);
+    glGenBuffers(1, &screenVBO);
+    glBindVertexArray(screenVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, screenVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(screenVertices), &screenVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3*sizeof(GLfloat)));
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
     // Setup Instancing
-    GLuint nrAsteroids = 10000;
+    GLuint nrAsteroids = 5000;
     glm::mat4 asteroidModelMatrices[nrAsteroids];
     GLfloat ringRadius = 10.0;
     GLfloat avgPeriod = 30.0;
@@ -179,19 +255,22 @@ int main()
         glfwPollEvents();
         Do_Movement();
 
-        // Rendering Administrivia
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+        // Update Transformation UBO
         glBindBuffer(GL_UNIFORM_BUFFER, transUBO);
             glm::mat4 view = camera.getViewMatrix();
             glm::mat4 projection = glm::perspective(camera.fov, (float)screenWidth/(float)screenHeight, near, far);
             glBufferSubData(GL_UNIFORM_BUFFER,  0, 64, glm::value_ptr(view));
             glBufferSubData(GL_UNIFORM_BUFFER, 64, 64, glm::value_ptr(projection));
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
         glm::mat4 model;
 
+        // Rendering Administrivia
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
+
+        // Render to FBO
         shader.Use();
             // Transformation Matrices
             model = glm::mat4();
@@ -203,9 +282,25 @@ int main()
         asteroidShader.Use();
             asteroid.DrawInstanced(asteroidShader, nrAsteroids);
 
+        // Swap the buffers
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, postFBO);
+        glBlitFramebuffer(0, 0, screenWidth, screenHeight,
+                          0, 0, screenWidth, screenHeight,
+                          GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+        // Postprocessing
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        screenShader.Use();
+            glBindVertexArray(screenVAO);
+            glDisable(GL_DEPTH_TEST);
+            glBindTexture(GL_TEXTURE_2D, postTex);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+
         glBindVertexArray(0);
 
-        // Swap the buffers
         glfwSwapBuffers(window);
     }
 
