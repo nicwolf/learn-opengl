@@ -24,16 +24,17 @@ struct Texture {
 
 class Mesh {
 public:
-    std::vector<Vertex>  vertices;
-    std::vector<GLuint>  indices;
-    std::vector<Texture> textures;
     Mesh(std::vector<Vertex> vertices,
          std::vector<GLuint> indices,
          std::vector<Texture> textures);
     void Draw(Shader shader);
     void DrawInstanced(Shader shader, GLuint instanceCount);
     GLuint VAO, VBO, EBO;
-private:
+protected:
+    Mesh();
+    std::vector<Vertex>  vertices;
+    std::vector<GLuint>  indices;
+    std::vector<Texture> textures;
     void setupMesh();
 };
 
