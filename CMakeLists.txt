@@ -3,37 +3,11 @@ cmake_minimum_required(VERSION 2.8)
 aux_source_directory(. SRC_LIST)
 add_executable(${PROJECT_NAME}
     ${SRC_LIST}
-    shaders/planet.frag
+    shaders/base.vert
+    shaders/instanced.vert
+    shaders/phong.frag
+    shaders/constant.frag
     shaders/planet.vert
-    shaders/instancing.frag
-    shaders/instancing.vert
-    shaders/normalvis.frag
-    shaders/normalvis.vert
-    shaders/normalvis.geom
-    shaders/exploding.frag
-    shaders/exploding.vert
-    shaders/exploding.geom
-    shaders/points.frag
-    shaders/points.vert
-    shaders/points.geom
-    shaders/environmentmap.frag
-    shaders/environmentmap.vert
-    shaders/skybox.frag
-    shaders/skybox.vert
-    shaders/screen.frag
-    shaders/screen.vert
-    shaders/blend.frag
-    shaders/blend.vert
-    shaders/outline.frag
-    shaders/outline.vert
-    shaders/depth.frag
-    shaders/depth.vert
-    shaders/nanosuit.frag
-    shaders/nanosuit.vert
-    shaders/cube.frag
-    shaders/cube.vert
-    shaders/light.frag
-    shaders/light.vert
 )
 find_package(glfw3 3.2 REQUIRED)
 target_link_libraries(learn-opengl glfw)

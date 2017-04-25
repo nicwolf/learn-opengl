@@ -1,15 +1,11 @@
 #version 330 core
-in vec3 vertexColor;
-in vec3 vertexPosition;
-in vec2 textureCoordinate;
+out vec4 fragColor;
 
-uniform vec3 lightColor;
-uniform sampler2D containerTexture;
-uniform sampler2D faceTexture;
-uniform float mixConstant;
-
-out vec4 color;
+layout (std140) uniform Lighting {
+    uniform vec3 lightPos;
+    uniform vec3 lightColor;
+};
 
 void main() {
-   color = vec4(lightColor, 1.0);
+   fragColor = vec4(lightColor, 1.0);
 }

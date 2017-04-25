@@ -25,35 +25,35 @@ void main()
 
     // Kernel Effects
     // --------------
-    vec2 offsets[9] = vec2[](
-        vec2(-offset,  offset),
-        vec2(   0.0f,  offset),
-        vec2( offset,  offset),
-        vec2(-offset,    0.0f),
-        vec2(   0.0f,    0.0f),
-        vec2( offset,    0.0f),
-        vec2(-offset, -offset),
-        vec2(   0.0f, -offset),
-        vec2( offset, -offset)
-    );
-    vec3 sampleTex[9];
-    vec3 convolvedColor = vec3(0.0);
+//    vec2 offsets[9] = vec2[](
+//        vec2(-offset,  offset),
+//        vec2(   0.0f,  offset),
+//        vec2( offset,  offset),
+//        vec2(-offset,    0.0f),
+//        vec2(   0.0f,    0.0f),
+//        vec2( offset,    0.0f),
+//        vec2(-offset, -offset),
+//        vec2(   0.0f, -offset),
+//        vec2( offset, -offset)
+//    );
+//    vec3 sampleTex[9];
+//    vec3 convolvedColor = vec3(0.0);
 
-    // Sharpen
-    float sharpenKernel[9] = float[] (
-        -1, -1, -1,
-        -1,  9, -1,
-        -1, -1, -1
-    );
-    for (int i = 0; i < 9; i++)
-    {
-        sampleTex[i] = vec3(texture(screenTexture, uv.st + offsets[i]));
-    }
-    for (int i = 0; i < 9; i++)
-    {
-        convolvedColor += sampleTex[i] * sharpenKernel[i];
-    }
-    fragColor = vec4(convolvedColor, 1.0);
+//    // Sharpen
+//    float sharpenKernel[9] = float[] (
+//        -1, -1, -1,
+//        -1,  9, -1,
+//        -1, -1, -1
+//    );
+//    for (int i = 0; i < 9; i++)
+//    {
+//        sampleTex[i] = vec3(texture(screenTexture, uv.st + offsets[i]));
+//    }
+//    for (int i = 0; i < 9; i++)
+//    {
+//        convolvedColor += sampleTex[i] * sharpenKernel[i];
+//    }
+//    fragColor = vec4(convolvedColor, 1.0);
 
     // Blur
 //    float blurKernel[9] = float[] (
@@ -91,5 +91,5 @@ void main()
     // Solid Color
 //     fragColor = vec4(1.0);
 
-//    fragColor = texColor;
+    fragColor = texColor;
 }
