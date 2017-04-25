@@ -1,0 +1,352 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"report",
+				"report_type\tstatement"
+			],
+			[
+				"decode",
+				"decode_email_body\tfunction"
+			],
+			[
+				"distort",
+				"distortion_map"
+			],
+			[
+				"distot",
+				"distortion_map"
+			]
+		]
+	},
+	"buffers":
+	[
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+		[
+			[
+				[
+					"Packages/Python/Python.sublime-build",
+					""
+				],
+				[
+					"Packages/Python/Python.sublime-build",
+					"Syntax Check"
+				]
+			],
+			[
+				"Packages/Python/Python.sublime-build",
+				""
+			]
+		]
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 92.0,
+		"last_filter": "dislin",
+		"selected_items":
+		[
+			[
+				"dislin",
+				"Anaconda: Disable linting on this file"
+			],
+			[
+				"sspy",
+				"Set Syntax: Python"
+			],
+			[
+				"enlin",
+				"Anaconda: Enable linting on this file"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"en",
+				"Anaconda: Enable linting on this file"
+			],
+			[
+				"disli",
+				"Anaconda: Disable linting on this file"
+			],
+			[
+				"disl",
+				"Anaconda: Disable linting on this file"
+			],
+			[
+				"ssgls",
+				"Set Syntax: GLSL"
+			],
+			[
+				"view",
+				"View: Toggle Menu"
+			],
+			[
+				"lint",
+				"Anaconda: Disable linting on this file"
+			],
+			[
+				"branch",
+				"Git: New Branch"
+			],
+			[
+				"git",
+				"Git: Status"
+			],
+			[
+				"instal",
+				"Package Control: Install Package"
+			],
+			[
+				"menu",
+				"View: Toggle Menu"
+			]
+		],
+		"width": 449.0
+	},
+	"console":
+	{
+		"height": 174.0,
+		"history":
+		[
+			"import urllib.request,os,hashlib; h = 'df21e130d211cfc94d9b0905775a7c0f' + '1e3d39e33b79698005270310898eea76'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://packagecontrol.io/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by) ",
+			"import urllib.request,os,hashlib; h = 'df21e130d211cfc94d9b0905775a7c0f' + '1e3d39e33b79698005270310898eea76'; pf = 'Package Control.sublime-package'; ipp =                         sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener(urllib.request.ProxyHandler()) ); by = urllib.request.urlopen('http://packagecontrol.io/' +              pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else                    open(os.path.join( ipp, pf), 'wb' ).write(by)"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": false,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/home/nicwolf/Personal To-Do",
+		"/home/nicwolf/PIRL/HiOps/2017-02-13.md",
+		"/home/nicwolf/learn-opengl/main.cpp",
+		"/home/nicwolf/CAMP-PLANS",
+		"/home/nicwolf/PIRL/Pegasus/CaSSIS/bin/mosaic",
+		"/home/nicwolf/PIRL/Pegasus/CaSSIS/tc.txt",
+		"/home/nicwolf/PIRL/Pegasus/CaSSIS/daxgen.py",
+		"/home/nicwolf/NKP/email-converter/nkpconvert.py",
+		"/home/nicwolf/NKP/email-converter/restructure.py",
+		"/home/nicwolf/NKP/email-converter/nkpconvert_v3.1.py",
+		"/home/nicwolf/PIRL/Pegasus/CaSSIS/rc.txt",
+		"/home/nicwolf/PIRL/Pegasus/CaSSIS/bin/edrgen",
+		"/home/nicwolf/PIRL/Pegasus/CaSSIS/bin/stats",
+		"/home/nicwolf/PIRL/Pegasus/learning/pipeline/sites.xml",
+		"/home/nicwolf/PIRL/Pegasus/CaSSIS/sites.xml",
+		"/home/nicwolf/PIRL/Pegasus/learning/pipeline/tc.txt",
+		"/home/nicwolf/PIRL/Pegasus/learning/pipeline/daxgen.py",
+		"/home/nicwolf/NKP/email-converter/sendmail.py",
+		"/home/nicwolf/NKP/email-converter/testfile",
+		"/home/nicwolf/PIRL/CaSSIS/cassis-data-processing/cassis/wms/pegasus/daxgen.py",
+		"/home/nicwolf/PIRL/Pegasus/learning/00/daxgen.py",
+		"/home/nicwolf/Documents/Personal/Sketches/eye.frag",
+		"/home/nicwolf/glslViewer/examples/test.frag",
+		"/home/nicwolf/.config/sublime-text-3/Packages/User/Preferences.sublime-settings",
+		"/home/nicwolf/.config/sublime-text-3/Packages/Default/Preferences.sublime-settings"
+	],
+	"find":
+	{
+		"height": 34.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"ALL",
+			"sender",
+			",",
+			"headers",
+			"ses_client",
+			"decoded_message",
+			"entries",
+			"SES_CLIENT",
+			"s3_client",
+			"    # --------------------------------------------------------------------",
+			"# ------------------------------------------------------------------------",
+			"geometry_ou",
+			"cube",
+			"geometry",
+			"cube",
+			"# Setup\n    # ------------------------------------------------------------------------",
+			"cube",
+			"stats",
+			"stats_jobs",
+			"isisgen",
+			"framelet",
+			"edrgen",
+			"edr",
+			"edrgen",
+			"# ----------------------------------------------------------------------------",
+			" ",
+			"msg",
+			"body",
+			"decoded_message",
+			"decoded_msg",
+			"raw",
+			"message",
+			"message_string",
+			"stats",
+			"cube",
+			"isisgen",
+			".format(obs)",
+			"edrgen",
+			"addArguments(",
+			"earning/pipeline",
+			"learning/pipeline",
+			"Pegasus",
+			"obsid +",
+			"edrgen",
+			"'test'",
+			"fract",
+			"p",
+			");\n",
+			"()"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+			]
+		},
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 26.0
+	},
+	"input":
+	{
+		"height": 34.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			],
+			[
+				1,
+				0,
+				2,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			0.5,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 246.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"output.git":
+	{
+		"height": 128.0
+	},
+	"pinned_build_system": "",
+	"project": "learn-opengl.sublime-project",
+	"replace":
+	{
+		"height": 48.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"",
+				"~/PIRL/CaSSIS/Simulated Data/SimulatedData.sublime-workspace"
+			]
+		],
+		"width": 380.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": false,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": false,
+	"side_bar_width": 196.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

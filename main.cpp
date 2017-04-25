@@ -197,16 +197,44 @@ int main(int argc, char *argv[])
     // ------------
     Shader cubeShader("../learn-opengl/shaders/base.vert",
                       "../learn-opengl/shaders/phong.frag");
-    Shader lightShader("../learn-opengl/shaders/base.vert",
+    Shader lightShader("../learn-opengl/shaders/instanced.vert",
                        "../learn-opengl/shaders/constant.frag");
 
     // Lights
-    glm::vec3 pointLightPositions[] = {
+    GLuint numPointLightInstances = 4;
+    glm::mat4 pointLightInstanceModelMatrices[numPointLightInstances];
+    glm::vec3 pointLightInstancePositions[] = {
         glm::vec3( 0.7f,  0.2f,   2.0f),
         glm::vec3( 2.3f, -3.3f,  -4.0f),
         glm::vec3(-4.0f,  2.0f, -12.0f),
         glm::vec3( 0.0f,  0.0f,  -3.0f)
     };
+    for (GLuint i = 0; i < numPointLightInstances; i++) {
+        glm::mat4 modelMatrix = glm::mat4();
+        modelMatrix = glm::translate(modelMatrix, pointLightInstancePositions[i]);
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.1f));
+        pointLightInstanceModelMatrices[i] = modelMatrix;
+    }
+    GLuint lightInstanceBuffer;
+    glGenBuffers(1, &lightInstanceBuffer);
+    glBindVertexArray(lightVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, lightInstanceBuffer);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(pointLightInstanceModelMatrices), &pointLightInstanceModelMatrices, GL_STATIC_DRAW);
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 16 * sizeof(GLfloat), (GLvoid*) ( 0 * sizeof(GLfloat)));
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 16 * sizeof(GLfloat), (GLvoid*) ( 4 * sizeof(GLfloat)));
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 16 * sizeof(GLfloat), (GLvoid*) ( 8 * sizeof(GLfloat)));
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 16 * sizeof(GLfloat), (GLvoid*) (12 * sizeof(GLfloat)));
+        glEnableVertexAttribArray(3);
+        glEnableVertexAttribArray(4);
+        glEnableVertexAttribArray(5);
+        glEnableVertexAttribArray(6);
+        glVertexAttribDivisor(3, 1);
+        glVertexAttribDivisor(4, 1);
+        glVertexAttribDivisor(5, 1);
+        glVertexAttribDivisor(6, 1);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    
 
     // Render Loop
     // -----------
@@ -306,7 +334,7 @@ int main(int argc, char *argv[])
             GLint linearFallLoc    = glGetUniformLocation(cubeShader.Program, "pointLights[0].linearFalloff");
             GLint quadraticFallLoc = glGetUniformLocation(cubeShader.Program, "pointLights[0].quadraticFalloff");
 
-            glm::vec4 lightPosEye = viewMatrix * glm::vec4(pointLightPositions[0], 1.0);
+            glm::vec4 lightPosEye = viewMatrix * glm::vec4(pointLightInstancePositions[0], 1.0);
             glUniform3f(lightPosLoc, lightPosEye.x, lightPosEye.y, lightPosEye.z);
 
             glUniform3f(lightAmbientLoc,  0.1f, 0.1f, 0.1f);
@@ -326,7 +354,7 @@ int main(int argc, char *argv[])
             linearFallLoc    = glGetUniformLocation(cubeShader.Program, "pointLights[1].linearFalloff");
             quadraticFallLoc = glGetUniformLocation(cubeShader.Program, "pointLights[1].quadraticFalloff");
 
-            lightPosEye = viewMatrix * glm::vec4(pointLightPositions[1], 1.0);
+            lightPosEye = viewMatrix * glm::vec4(pointLightInstancePositions[1], 1.0);
             glUniform3f(lightPosLoc, lightPosEye.x, lightPosEye.y, lightPosEye.z);
 
             glUniform3f(lightAmbientLoc,  0.1f, 0.1f, 0.1f);
@@ -346,7 +374,7 @@ int main(int argc, char *argv[])
             linearFallLoc    = glGetUniformLocation(cubeShader.Program, "pointLights[2].linearFalloff");
             quadraticFallLoc = glGetUniformLocation(cubeShader.Program, "pointLights[2].quadraticFalloff");
 
-            lightPosEye = viewMatrix * glm::vec4(pointLightPositions[2], 1.0);
+            lightPosEye = viewMatrix * glm::vec4(pointLightInstancePositions[2], 1.0);
             glUniform3f(lightPosLoc, lightPosEye.x, lightPosEye.y, lightPosEye.z);
 
             glUniform3f(lightAmbientLoc,  0.1f, 0.1f, 0.1f);
@@ -366,7 +394,7 @@ int main(int argc, char *argv[])
             linearFallLoc    = glGetUniformLocation(cubeShader.Program, "pointLights[3].linearFalloff");
             quadraticFallLoc = glGetUniformLocation(cubeShader.Program, "pointLights[3].quadraticFalloff");
 
-            lightPosEye = viewMatrix * glm::vec4(pointLightPositions[3], 1.0);
+            lightPosEye = viewMatrix * glm::vec4(pointLightInstancePositions[3], 1.0);
             glUniform3f(lightPosLoc, lightPosEye.x, lightPosEye.y, lightPosEye.z);
 
             glUniform3f(lightAmbientLoc,  0.1f, 0.1f, 0.1f);
@@ -427,7 +455,7 @@ int main(int argc, char *argv[])
 
                 glm::mat4 modelMatrix;
                 modelMatrix = glm::mat4();
-                modelMatrix = glm::translate(modelMatrix, pointLightPositions[i]);
+                modelMatrix = glm::translate(modelMatrix, pointLightInstancePositions[i]);
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(0.1f));
                 GLuint modelMatrixLocation = glGetUniformLocation(lightShader.Program, "modelMatrix");
                 glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
@@ -448,7 +476,7 @@ int main(int argc, char *argv[])
                 glUniformMatrix4fv(modelViewProjectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
 
                 // Draw
-                glDrawArrays(GL_TRIANGLES, 0, 36);
+                glDrawArraysInstanced(GL_TRIANGLES, 0, 36, 4);
             }
         glBindVertexArray(0);
         // Swap the current color buffer out for the one just drawn
