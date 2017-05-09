@@ -8,8 +8,12 @@ uniform mat4 modelMatrix;
 uniform mat4 modelViewMatrix;
 uniform mat4 modelViewMatrixInverseTranspose;
 uniform mat4 modelViewProjectionMatrix;
-uniform mat4 projectionMatrix;
-uniform mat4 viewMatrix;
+
+layout (std140) uniform Matrices
+{
+    uniform mat4 projectionMatrix;
+    uniform mat4 viewMatrix;
+};
 
 out VS_OUT 
 {

@@ -16,10 +16,9 @@ struct PointLight {
 
     float constantFalloff;
     float linearFalloff;
-    float quadFalloff;
+    float quadraticFalloff;
 };
-#define NR_POINT_LIGHTS 4
-uniform PointLight pointLights[NR_POINT_LIGHTS];
+
 vec3 calcPointLight(PointLight light, vec3 normal, vec3 viewDir);
 
 struct DirectionalLight {
@@ -29,26 +28,31 @@ struct DirectionalLight {
     vec3 diffuse;
     vec3 specular;
 };
-uniform DirectionalLight dirLight;
 vec3 calcDirLight(DirectionalLight light, vec3 normal, vec3 viewDir);
 
 struct ConeLight {
     vec3 position;
     vec3 direction;
 
-    float cutoff;
-    float outerCutoff;
-
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
 
+    float cutoff;
+    float outerCutoff;
+
     float constantFalloff;
     float linearFalloff;
-    float quadFalloff;
+    float quadraticFalloff;
 };
-uniform ConeLight coneLight;
 vec3 calcConeLight(ConeLight light, vec3 normal, vec3 viewDir);
+
+layout (std140) uniform Lights
+{
+    uniform PointLight pointLights[4];
+    uniform DirectionalLight dirLight;
+    uniform ConeLight coneLight;
+};
 
 struct Material {
     sampler2D diffuse;
@@ -129,7 +133,7 @@ vec3 calcConeLight(ConeLight light, vec3 normal, vec3 viewDir) {
     float distance    = length(light.position - fs_in.position);
     float attenuation = 1.0 / (light.constantFalloff
                                + light.linearFalloff * distance
-                               + light.quadFalloff * pow(distance, 2.0));
+                               + light.quadraticFalloff * pow(distance, 2.0));
     ambient  *= attenuation * rolloff;
     diffuse  *= attenuation * rolloff;
     specular *= attenuation * rolloff;
@@ -164,7 +168,7 @@ vec3 calcPointLight(PointLight light, vec3 normal, vec3 viewDir) {
     float distance    = length(light.position - fs_in.position);
     float attenuation = 1.0 / (light.constantFalloff
                                + light.linearFalloff * distance
-                               + light.quadFalloff * pow(distance, 2.0));
+                               + light.quadraticFalloff * pow(distance, 2.0));
     ambient  *= attenuation;
     diffuse  *= attenuation;
     specular *= attenuation;

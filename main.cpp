@@ -10,6 +10,7 @@
 #include "shader.h"
 #include "camera.h"
 #include "box.h"
+#include "lights.h"
 
 using namespace std;
 
@@ -121,12 +122,103 @@ int main(int argc, char *argv[])
 
     // Load Shaders
     // ------------
-    Shader phongShader("../learn-opengl/shaders/base.vert",
-                       "../learn-opengl/shaders/phong.frag");
-    Shader constInstancedShader("../learn-opengl/shaders/instanced.vert",
-                                "../learn-opengl/shaders/constant.frag");
+    Shader shaderPhongBase("../learn-opengl/shaders/base.vert",
+                           "../learn-opengl/shaders/phong.frag");
+    Shader shaderConstInst("../learn-opengl/shaders/instanced.vert",
+                           "../learn-opengl/shaders/constant.frag");
+
+    // Transformation Matrix Uniform Buffers
+    // -------------------------------------
+    GLuint uboMatrices;
+    glGenBuffers(1, &uboMatrices);
+    glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+    glBufferData(GL_UNIFORM_BUFFER, 128, NULL, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 128);
+
+    GLuint uboMatricesIndexPhongBase = glGetUniformBlockIndex(shaderPhongBase.Program, "Matrices");
+    glUniformBlockBinding(shaderPhongBase.Program, uboMatricesIndexPhongBase, 0);
+    GLuint uboMatricesIndexConstInst = glGetUniformBlockIndex(shaderConstInst.Program, "Matrices");
+    glUniformBlockBinding(shaderConstInst.Program, uboMatricesIndexConstInst, 0);
+
+    // Lighting Uniform Buffer
+    // -----------------------
+    struct Lights {
+        PointLight pointLights[4];
+        DirectionalLight dirLight;
+        ConeLight coneLight;
+    } lights;
+
+    GLuint uboLights;
+    glGenBuffers(1, &uboLights);
+    glBindBuffer(GL_UNIFORM_BUFFER, uboLights);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(lights), NULL, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glBindBufferRange(GL_UNIFORM_BUFFER, 1, uboLights, 0, sizeof(lights));
+
+    GLuint uboLightsIndexPhongBase = glGetUniformBlockIndex(shaderPhongBase.Program, "Lights");
+    glUniformBlockBinding(shaderPhongBase.Program, uboLightsIndexPhongBase, 1);
+    GLuint uboLightsIndexConstInst = glGetUniformBlockIndex(shaderConstInst.Program, "Lights");
+    glUniformBlockBinding(shaderConstInst.Program, uboLightsIndexConstInst, 1);
+
+    // Lighting
+    // --------
+    // Directional Light
+    lights.dirLight.ambient  = glm::vec3(0.2f, 0.2f, 0.2f);
+    lights.dirLight.diffuse  = glm::vec3(0.3f, 0.3f, 0.3f);
+    lights.dirLight.specular = glm::vec3(1.0f, 1.0f, 1.0f);
+
+    // Point Light #0
+    lights.pointLights[0].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
+    lights.pointLights[0].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
+    lights.pointLights[0].specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    lights.pointLights[0].constantFalloff  = 1.000f;
+    lights.pointLights[0].linearFalloff    = 0.090f;
+    lights.pointLights[0].quadraticFalloff = 0.032f;
+
+    // Point Light #1
+    lights.pointLights[1].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
+    lights.pointLights[1].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
+    lights.pointLights[1].specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    lights.pointLights[1].constantFalloff  = 1.000f;
+    lights.pointLights[1].linearFalloff    = 0.090f;
+    lights.pointLights[1].quadraticFalloff = 0.032f;
+
+    // Point Light #2
+    lights.pointLights[2].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
+    lights.pointLights[2].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
+    lights.pointLights[2].specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    lights.pointLights[2].constantFalloff  = 1.000f;
+    lights.pointLights[2].linearFalloff    = 0.090f;
+    lights.pointLights[2].quadraticFalloff = 0.032f;
+
+    // Point Light #3
+    lights.pointLights[3].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
+    lights.pointLights[3].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
+    lights.pointLights[3].specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    lights.pointLights[3].constantFalloff  = 1.000f;
+    lights.pointLights[3].linearFalloff    = 0.090f;
+    lights.pointLights[3].quadraticFalloff = 0.032f;
+
+    // Cone Light (Flashlight)
+    lights.coneLight.position  = glm::vec3(0.0f, 0.0f,  0.0f);
+    lights.coneLight.direction = glm::vec3(0.0f, 0.0f, -1.0f);
+    lights.coneLight.ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
+    lights.coneLight.diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
+    lights.coneLight.specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    lights.coneLight.cutoff      = glm::cos(glm::radians(12.5));
+    lights.coneLight.outerCutoff = glm::cos(glm::radians(18.5));
+    lights.coneLight.constantFalloff  = 1.000f;
+    lights.coneLight.linearFalloff    = 0.090f;
+    lights.coneLight.quadraticFalloff = 0.032f;
+
+    // Send to UBO
+    glBindBuffer(GL_UNIFORM_BUFFER, uboLights);
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(lights), &lights, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     // Lights
+    // ------
     GLuint numPointLightInstances = 4;
     glm::mat4 pointLightInstanceModelMatrices[numPointLightInstances];
     glm::vec3 pointLightInstancePositions[] = {
@@ -177,9 +269,14 @@ int main(int argc, char *argv[])
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        // Transformation Matrices
-        glm::mat4 viewMatrix;
-        glm::mat4 projectionMatrix;
+        // Scene Transformation Matrices
+        glm::mat4 projectionMatrix = glm::perspective(glm::radians(camera.fov), (GLfloat) WIDTH / (GLfloat) HEIGHT, 0.1f, 100.0f);
+        glm::mat4 viewMatrix = camera.getViewMatrix();
+        glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+        glBufferSubData(GL_UNIFORM_BUFFER,  0, 64, glm::value_ptr(projectionMatrix));
+        glBufferSubData(GL_UNIFORM_BUFFER, 64, 64, glm::value_ptr(viewMatrix));
+
+        // Object Transformation Matrices
         glm::mat4 modelMatrix;
         glm::mat4 modelViewMatrix;
         glm::mat4 modelViewMatrixInverseTranspose;
@@ -191,208 +288,85 @@ int main(int argc, char *argv[])
         GLuint modelViewMatrixInverseTransposeLocation;
         GLuint modelViewProjectionMatrixLocation;
 
+        // Scene Lighting
+        glBindBuffer(GL_UNIFORM_BUFFER, uboLights);
+            lights.dirLight.direction = glm::vec3(glm::transpose(glm::inverse(viewMatrix)) * glm::vec4(0.0f, -1.0f, 0.0f, 1.0));
+            glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, dirLight.direction), sizeof(glm::vec3), &lights.dirLight.direction);
+            lights.pointLights[0].position = viewMatrix * glm::vec4(pointLightInstancePositions[0], 1.0);
+            glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, pointLights[0].position), sizeof(glm::vec3), &lights.pointLights[0].position);
+            lights.pointLights[1].position = viewMatrix * glm::vec4(pointLightInstancePositions[1], 1.0);
+            glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, pointLights[1].position), sizeof(glm::vec3), &lights.pointLights[1].position);
+            lights.pointLights[2].position = viewMatrix * glm::vec4(pointLightInstancePositions[2], 1.0);
+            glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, pointLights[2].position), sizeof(glm::vec3), &lights.pointLights[2].position);
+            lights.pointLights[3].position = viewMatrix * glm::vec4(pointLightInstancePositions[3], 1.0);
+            glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, pointLights[3].position), sizeof(glm::vec3), &lights.pointLights[3].position);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
         // Draw Cube
-        phongShader.Use();
-            viewMatrix = camera.getViewMatrix();
-            viewMatrixLocation = glGetUniformLocation(phongShader.Program, "viewMatrix");
-            glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
-
-            projectionMatrix = glm::perspective(glm::radians(camera.fov), (GLfloat) WIDTH / (GLfloat) HEIGHT, 0.1f, 100.0f);
-            projectionMatrixLocation = glGetUniformLocation(phongShader.Program, "projectionMatrix");
-            glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
-
+        shaderPhongBase.Use();
             modelMatrix = glm::mat4();
-            modelMatrixLocation = glGetUniformLocation(phongShader.Program, "modelMatrix");
+            modelMatrixLocation = glGetUniformLocation(shaderPhongBase.Program, "modelMatrix");
             glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
             modelViewMatrix = viewMatrix * modelMatrix;
-            modelViewMatrixLocation = glGetUniformLocation(phongShader.Program, "modelViewMatrix");
+            modelViewMatrixLocation = glGetUniformLocation(shaderPhongBase.Program, "modelViewMatrix");
             glUniformMatrix4fv(modelViewMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
 
             modelViewMatrixInverseTranspose = glm::inverse(glm::transpose(viewMatrix * modelMatrix));;
-            modelViewMatrixInverseTransposeLocation = glGetUniformLocation(phongShader.Program, "modelViewMatrixInverseTranspose");
+            modelViewMatrixInverseTransposeLocation = glGetUniformLocation(shaderPhongBase.Program, "modelViewMatrixInverseTranspose");
             glUniformMatrix4fv(modelViewMatrixInverseTransposeLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrixInverseTranspose));
 
             modelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
-            modelViewProjectionMatrixLocation = glGetUniformLocation(phongShader.Program, "modelViewProjectionMatrix");
+            modelViewProjectionMatrixLocation = glGetUniformLocation(shaderPhongBase.Program, "modelViewProjectionMatrix");
             glUniformMatrix4fv(modelViewProjectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
 
             // Bind the Diffuse Map
-            glUniform1i(glGetUniformLocation(phongShader.Program, "material.diffuse"), 0);
+            glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "material.diffuse"), 0);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, diffuseMap);
 
             // Bind the Specular Map
-            glUniform1i(glGetUniformLocation(phongShader.Program, "material.specular"), 1);
+            glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "material.specular"), 1);
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, specularMap);
 
             // Send Uniforms
             // -------------
             // Material
-            GLint materialAmbientLoc   = glGetUniformLocation(phongShader.Program, "material.ambient");
-            GLint materialDiffuseLoc   = glGetUniformLocation(phongShader.Program, "material.diffuse");
-            GLint materialSpecularLoc  = glGetUniformLocation(phongShader.Program, "material.specular");
-            GLint materialShininessLoc = glGetUniformLocation(phongShader.Program, "material.shininess");
+            GLint materialAmbientLoc   = glGetUniformLocation(shaderPhongBase.Program, "material.ambient");
+            GLint materialDiffuseLoc   = glGetUniformLocation(shaderPhongBase.Program, "material.diffuse");
+            GLint materialSpecularLoc  = glGetUniformLocation(shaderPhongBase.Program, "material.specular");
+            GLint materialShininessLoc = glGetUniformLocation(shaderPhongBase.Program, "material.shininess");
 
             glUniform3f(materialAmbientLoc,   1.0f, 0.5f, 0.31f);
             glUniform3f(materialDiffuseLoc,   1.0f, 0.5f, 0.31f);
             glUniform3f(materialSpecularLoc,  0.5f, 0.5f, 0.5f);
             glUniform1f(materialShininessLoc, 32.0f);
 
-            // Lighting
-            // --------
-            // Directional Light
-            GLint lightDirectionLoc = glGetUniformLocation(phongShader.Program, "dirLight.direction");
-            GLint lightAmbientLoc   = glGetUniformLocation(phongShader.Program, "dirLight.ambient");
-            GLint lightDiffuseLoc   = glGetUniformLocation(phongShader.Program, "dirLight.diffuse");
-            GLint lightSpecularLoc  = glGetUniformLocation(phongShader.Program, "dirLight.specular");
-
-            glm::vec4 lightDirection = glm::transpose(glm::inverse(viewMatrix * modelMatrix)) * glm::vec4(0.2f, -0.2f, 0.0f, 1.0);
-            glUniform3f(lightDirectionLoc, lightDirection.x, lightDirection.y, lightDirection.z);
-
-            glUniform3f(lightAmbientLoc,  0.2f, 0.2f, 0.2f);
-            glUniform3f(lightDiffuseLoc,  0.3f, 0.3f, 0.3f);
-            glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
-
-            // Point Light #0
-            GLint lightPosLoc      = glGetUniformLocation(phongShader.Program, "pointLights[0].position");
-            lightAmbientLoc  = glGetUniformLocation(phongShader.Program, "pointLights[0].ambient");
-            lightDiffuseLoc  = glGetUniformLocation(phongShader.Program, "pointLights[0].diffuse");
-            lightSpecularLoc = glGetUniformLocation(phongShader.Program, "pointLights[0].specular");
-            GLint constantFallLoc  = glGetUniformLocation(phongShader.Program, "pointLights[0].constantFalloff");
-            GLint linearFallLoc    = glGetUniformLocation(phongShader.Program, "pointLights[0].linearFalloff");
-            GLint quadraticFallLoc = glGetUniformLocation(phongShader.Program, "pointLights[0].quadraticFalloff");
-
-            glm::vec4 lightPosEye = viewMatrix * glm::vec4(pointLightInstancePositions[0], 1.0);
-            glUniform3f(lightPosLoc, lightPosEye.x, lightPosEye.y, lightPosEye.z);
-
-            glUniform3f(lightAmbientLoc,  0.1f, 0.1f, 0.1f);
-            glUniform3f(lightDiffuseLoc,  0.6f, 0.6f, 0.6f);
-            glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
-
-            glUniform1f(constantFallLoc,    1.0f);
-            glUniform1f(linearFallLoc,     0.09f);
-            glUniform1f(quadraticFallLoc, 0.032f);
-
-            // Point Light #1
-            lightPosLoc      = glGetUniformLocation(phongShader.Program, "pointLights[1].position");
-            lightAmbientLoc  = glGetUniformLocation(phongShader.Program, "pointLights[1].ambient");
-            lightDiffuseLoc  = glGetUniformLocation(phongShader.Program, "pointLights[1].diffuse");
-            lightSpecularLoc = glGetUniformLocation(phongShader.Program, "pointLights[1].specular");
-            constantFallLoc  = glGetUniformLocation(phongShader.Program, "pointLights[1].constantFalloff");
-            linearFallLoc    = glGetUniformLocation(phongShader.Program, "pointLights[1].linearFalloff");
-            quadraticFallLoc = glGetUniformLocation(phongShader.Program, "pointLights[1].quadraticFalloff");
-
-            lightPosEye = viewMatrix * glm::vec4(pointLightInstancePositions[1], 1.0);
-            glUniform3f(lightPosLoc, lightPosEye.x, lightPosEye.y, lightPosEye.z);
-
-            glUniform3f(lightAmbientLoc,  0.1f, 0.1f, 0.1f);
-            glUniform3f(lightDiffuseLoc,  0.6f, 0.6f, 0.6f);
-            glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
-
-            glUniform1f(constantFallLoc,    1.0f);
-            glUniform1f(linearFallLoc,     0.09f);
-            glUniform1f(quadraticFallLoc, 0.032f);
-
-            // Point Light #2
-            lightPosLoc      = glGetUniformLocation(phongShader.Program, "pointLights[2].position");
-            lightAmbientLoc  = glGetUniformLocation(phongShader.Program, "pointLights[2].ambient");
-            lightDiffuseLoc  = glGetUniformLocation(phongShader.Program, "pointLights[2].diffuse");
-            lightSpecularLoc = glGetUniformLocation(phongShader.Program, "pointLights[2].specular");
-            constantFallLoc  = glGetUniformLocation(phongShader.Program, "pointLights[2].constantFalloff");
-            linearFallLoc    = glGetUniformLocation(phongShader.Program, "pointLights[2].linearFalloff");
-            quadraticFallLoc = glGetUniformLocation(phongShader.Program, "pointLights[2].quadraticFalloff");
-
-            lightPosEye = viewMatrix * glm::vec4(pointLightInstancePositions[2], 1.0);
-            glUniform3f(lightPosLoc, lightPosEye.x, lightPosEye.y, lightPosEye.z);
-
-            glUniform3f(lightAmbientLoc,  0.1f, 0.1f, 0.1f);
-            glUniform3f(lightDiffuseLoc,  0.6f, 0.6f, 0.6f);
-            glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
-
-            glUniform1f(constantFallLoc,    1.0f);
-            glUniform1f(linearFallLoc,     0.09f);
-            glUniform1f(quadraticFallLoc, 0.032f);
-
-            // Point Light #3
-            lightPosLoc      = glGetUniformLocation(phongShader.Program, "pointLights[3].position");
-            lightAmbientLoc  = glGetUniformLocation(phongShader.Program, "pointLights[3].ambient");
-            lightDiffuseLoc  = glGetUniformLocation(phongShader.Program, "pointLights[3].diffuse");
-            lightSpecularLoc = glGetUniformLocation(phongShader.Program, "pointLights[3].specular");
-            constantFallLoc  = glGetUniformLocation(phongShader.Program, "pointLights[3].constantFalloff");
-            linearFallLoc    = glGetUniformLocation(phongShader.Program, "pointLights[3].linearFalloff");
-            quadraticFallLoc = glGetUniformLocation(phongShader.Program, "pointLights[3].quadraticFalloff");
-
-            lightPosEye = viewMatrix * glm::vec4(pointLightInstancePositions[3], 1.0);
-            glUniform3f(lightPosLoc, lightPosEye.x, lightPosEye.y, lightPosEye.z);
-
-            glUniform3f(lightAmbientLoc,  0.1f, 0.1f, 0.1f);
-            glUniform3f(lightDiffuseLoc,  0.6f, 0.6f, 0.6f);
-            glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
-
-            glUniform1f(constantFallLoc,    1.0f);
-            glUniform1f(linearFallLoc,     0.09f);
-            glUniform1f(quadraticFallLoc, 0.032f);
-
-            // Cone Light (Flashlight)
-            lightPosLoc        = glGetUniformLocation(phongShader.Program, "coneLight.position");
-            lightAmbientLoc    = glGetUniformLocation(phongShader.Program, "coneLight.ambient");
-            lightDiffuseLoc    = glGetUniformLocation(phongShader.Program, "coneLight.diffuse");
-            lightSpecularLoc   = glGetUniformLocation(phongShader.Program, "coneLight.specular");
-            lightDirectionLoc  = glGetUniformLocation(phongShader.Program, "coneLight.direction");
-            constantFallLoc  = glGetUniformLocation(phongShader.Program, "coneLight.constantFalloff");
-            linearFallLoc    = glGetUniformLocation(phongShader.Program, "coneLight.linearFalloff");
-            quadraticFallLoc = glGetUniformLocation(phongShader.Program, "coneLight.quadraticFalloff");
-            GLint lightCutoffLoc     = glGetUniformLocation(phongShader.Program, "coneLight.cutoff");
-            GLint lightOuterCutoffLoc = glGetUniformLocation(phongShader.Program, "coneLight.outerCutoff");
-
-            glUniform3f(lightPosLoc,       0.0f, 0.0f,  0.0f);
-            glUniform3f(lightDirectionLoc, 0.0f, 0.0f, -1.0f);
-
-            glUniform3f(lightAmbientLoc,  0.1f, 0.1f, 0.1f);
-            glUniform3f(lightDiffuseLoc,  0.6f, 0.6f, 0.6f);
-            glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
-
-            glUniform1f(lightCutoffLoc,      glm::cos(glm::radians(12.5)));
-            glUniform1f(lightOuterCutoffLoc, glm::cos(glm::radians(18.5)));
-
-            glUniform1f(constantFallLoc, 1.0f);
-            glUniform1f(linearFallLoc, 0.09f);
-            glUniform1f(quadraticFallLoc, 0.032f);
-
             // Draw
-            box.Draw(phongShader);
+            box.Draw(shaderPhongBase);
 
         glBindVertexArray(0);
 
         // Draw Light
-        constInstancedShader.Use();
+        shaderConstInst.Use();
             // Send colors
-            glUniform3f(glGetUniformLocation(constInstancedShader.Program, "lightColor"), 1.0f, 1.0f, 1.0f);
-
-            viewMatrix = camera.getViewMatrix();
-            viewMatrixLocation = glGetUniformLocation(constInstancedShader.Program, "viewMatrix");
-            glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix));
-
-            projectionMatrix = glm::perspective(glm::radians(camera.fov), (GLfloat) WIDTH / (GLfloat) HEIGHT, 0.1f, 100.0f);
-            projectionMatrixLocation = glGetUniformLocation(constInstancedShader.Program, "projectionMatrix");
-            glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+            glUniform3f(glGetUniformLocation(shaderConstInst.Program, "lightColor"), 1.0f, 1.0f, 1.0f);
 
             modelViewMatrix = viewMatrix * modelMatrix;
-            modelViewMatrixLocation = glGetUniformLocation(constInstancedShader.Program, "modelViewMatrix");
+            modelViewMatrixLocation = glGetUniformLocation(shaderConstInst.Program, "modelViewMatrix");
             glUniformMatrix4fv(modelViewMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
 
             modelViewMatrixInverseTranspose = glm::inverse(glm::transpose(viewMatrix * modelMatrix));;
-            modelViewMatrixInverseTransposeLocation = glGetUniformLocation(constInstancedShader.Program, "modelViewMatrixInverseTranspose");
+            modelViewMatrixInverseTransposeLocation = glGetUniformLocation(shaderConstInst.Program, "modelViewMatrixInverseTranspose");
             glUniformMatrix4fv(modelViewMatrixInverseTransposeLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrixInverseTranspose));
 
             modelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
-            modelViewProjectionMatrixLocation = glGetUniformLocation(constInstancedShader.Program, "modelViewProjectionMatrix");
+            modelViewProjectionMatrixLocation = glGetUniformLocation(shaderConstInst.Program, "modelViewProjectionMatrix");
             glUniformMatrix4fv(modelViewProjectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
 
             // Draw
-            light.DrawInstanced(constInstancedShader, 4);
+            light.DrawInstanced(shaderConstInst, 4);
         glBindVertexArray(0);
         // Swap the current color buffer out for the one just drawn
         glfwSwapBuffers(window);
