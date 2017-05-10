@@ -6,6 +6,7 @@ add_executable(${PROJECT_NAME}
     shaders/base.vert
     shaders/instanced.vert
     shaders/phong.frag
+    shaders/phong-blinn.frag
     shaders/constant.frag
 )
 find_package(glfw3 3.2 REQUIRED)

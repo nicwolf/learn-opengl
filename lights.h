@@ -9,12 +9,14 @@ struct PointLight {
     glm::vec3 diffuse;
     float pad44;
     glm::vec3 specular;
-    float pad60;
+    // Next FLOAT gets packed here.
 
     float constantFalloff;
     float linearFalloff;
     float quadraticFalloff;
+    float pad72;
     float pad76;
+
 };
 
 struct DirectionalLight {
@@ -40,7 +42,7 @@ struct ConeLight {
     glm::vec3 diffuse;
     float pad60;
     glm::vec3 specular;
-    // Next FLOAT gets packed here
+    // Next FLOAT gets packed here.
 
     float cutoff;
     float outerCutoff;

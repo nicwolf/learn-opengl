@@ -10,6 +10,7 @@
 #include "shader.h"
 #include "camera.h"
 #include "box.h"
+#include "plane.h"
 #include "lights.h"
 
 using namespace std;
@@ -27,7 +28,7 @@ bool firstMouseMovement = true;
 bool keys[1024];
 
 // Camera Setup
-Camera camera(glm::vec3(0.0f, 0.0f, 4.0f));
+Camera camera(glm::vec3(0.0f, 1.0f, 4.0f));
 
 // Global Properties
 GLfloat mixConstant;
@@ -87,7 +88,7 @@ int main(int argc, char *argv[])
 
     // Create Geometry Data
     // --------------------
-    Box box = Box();
+    Plane plane = Plane();
     Box light = Box();  
 
     // Setup Textures
@@ -123,7 +124,7 @@ int main(int argc, char *argv[])
     // Load Shaders
     // ------------
     Shader shaderPhongBase("../learn-opengl/shaders/base.vert",
-                           "../learn-opengl/shaders/phong.frag");
+                           "../learn-opengl/shaders/phong-blinn.frag");
     Shader shaderConstInst("../learn-opengl/shaders/instanced.vert",
                            "../learn-opengl/shaders/constant.frag");
 
@@ -222,10 +223,10 @@ int main(int argc, char *argv[])
     GLuint numPointLightInstances = 4;
     glm::mat4 pointLightInstanceModelMatrices[numPointLightInstances];
     glm::vec3 pointLightInstancePositions[] = {
-        glm::vec3( 0.7f,  0.2f,   2.0f),
-        glm::vec3( 2.3f, -3.3f,  -4.0f),
-        glm::vec3(-4.0f,  2.0f, -12.0f),
-        glm::vec3( 0.0f,  0.0f,  -3.0f)
+        glm::vec3( 0.0f,  1.0f,  0.0f),
+        glm::vec3( 0.0f,  1.0f,  0.0f),
+        glm::vec3( 0.0f,  1.0f,  0.0f),
+        glm::vec3( 0.0f,  1.0f,  0.0f)
     };
     for (GLuint i = 0; i < numPointLightInstances; i++) {
         glm::mat4 modelMatrix = glm::mat4();
@@ -302,9 +303,11 @@ int main(int argc, char *argv[])
             glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, pointLights[3].position), sizeof(glm::vec3), &lights.pointLights[3].position);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-        // Draw Cube
+        // Draw Plane
         shaderPhongBase.Use();
             modelMatrix = glm::mat4();
+            modelMatrix = glm::scale(modelMatrix, glm::vec3(5.0f));
+            modelMatrix = glm::rotate(modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
             modelMatrixLocation = glGetUniformLocation(shaderPhongBase.Program, "modelMatrix");
             glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
@@ -341,10 +344,12 @@ int main(int argc, char *argv[])
             glUniform3f(materialAmbientLoc,   1.0f, 0.5f, 0.31f);
             glUniform3f(materialDiffuseLoc,   1.0f, 0.5f, 0.31f);
             glUniform3f(materialSpecularLoc,  0.5f, 0.5f, 0.5f);
-            glUniform1f(materialShininessLoc, 32.0f);
+            glUniform1f(materialShininessLoc, 64.0f);
 
             // Draw
-            box.Draw(shaderPhongBase);
+            glDisable(GL_CULL_FACE);
+            plane.Draw(shaderPhongBase);
+            glEnable(GL_CULL_FACE);
 
         glBindVertexArray(0);
 
