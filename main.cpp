@@ -85,6 +85,7 @@ int main(int argc, char *argv[])
     // --------------
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+    glEnable(GL_FRAMEBUFFER_SRGB);
 
     // Create Geometry Data
     // --------------------
@@ -100,7 +101,7 @@ int main(int argc, char *argv[])
     GLuint diffuseMap;
     glGenTextures(1, & diffuseMap);
     glBindTexture(GL_TEXTURE_2D, diffuseMap);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB,
                  diffuseMapImgWidth, diffuseMapImgHeight,
                  0, GL_RGB, GL_UNSIGNED_BYTE, diffuseMapImg);
     glGenerateMipmap(GL_TEXTURE_2D);
@@ -170,33 +171,33 @@ int main(int argc, char *argv[])
     lights.dirLight.specular = glm::vec3(1.0f, 1.0f, 1.0f);
 
     // Point Light #0
-    lights.pointLights[0].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
-    lights.pointLights[0].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
-    lights.pointLights[0].specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    lights.pointLights[0].ambient  = glm::vec3(0.0f, 0.0f, 0.1f);
+    lights.pointLights[0].diffuse  = glm::vec3(0.0f, 0.0f, 0.6f);
+    lights.pointLights[0].specular = glm::vec3(0.0f, 0.0f, 1.0f);
     lights.pointLights[0].constantFalloff  = 1.000f;
     lights.pointLights[0].linearFalloff    = 0.090f;
     lights.pointLights[0].quadraticFalloff = 0.032f;
 
     // Point Light #1
-    lights.pointLights[1].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
-    lights.pointLights[1].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
-    lights.pointLights[1].specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    lights.pointLights[1].ambient  = glm::vec3(0.1f, 0.0f, 0.0f);
+    lights.pointLights[1].diffuse  = glm::vec3(0.6f, 0.0f, 0.0f);
+    lights.pointLights[1].specular = glm::vec3(1.0f, 0.0f, 0.0f);
     lights.pointLights[1].constantFalloff  = 1.000f;
     lights.pointLights[1].linearFalloff    = 0.090f;
     lights.pointLights[1].quadraticFalloff = 0.032f;
 
     // Point Light #2
-    lights.pointLights[2].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
-    lights.pointLights[2].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
-    lights.pointLights[2].specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    lights.pointLights[2].ambient  = glm::vec3(0.0f, 0.1f, 0.0f);
+    lights.pointLights[2].diffuse  = glm::vec3(0.0f, 0.6f, 0.0f);
+    lights.pointLights[2].specular = glm::vec3(0.0f, 1.0f, 0.0f);
     lights.pointLights[2].constantFalloff  = 1.000f;
     lights.pointLights[2].linearFalloff    = 0.090f;
     lights.pointLights[2].quadraticFalloff = 0.032f;
 
     // Point Light #3
-    lights.pointLights[3].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
-    lights.pointLights[3].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
-    lights.pointLights[3].specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    lights.pointLights[3].ambient  = glm::vec3(0.1f, 0.1f, 0.0f);
+    lights.pointLights[3].diffuse  = glm::vec3(0.6f, 0.6f, 0.0f);
+    lights.pointLights[3].specular = glm::vec3(1.0f, 1.0f, 0.0f);
     lights.pointLights[3].constantFalloff  = 1.000f;
     lights.pointLights[3].linearFalloff    = 0.090f;
     lights.pointLights[3].quadraticFalloff = 0.032f;
@@ -223,10 +224,10 @@ int main(int argc, char *argv[])
     GLuint numPointLightInstances = 4;
     glm::mat4 pointLightInstanceModelMatrices[numPointLightInstances];
     glm::vec3 pointLightInstancePositions[] = {
-        glm::vec3( 0.0f,  1.0f,  0.0f),
-        glm::vec3( 0.0f,  1.0f,  0.0f),
-        glm::vec3( 0.0f,  1.0f,  0.0f),
-        glm::vec3( 0.0f,  1.0f,  0.0f)
+        glm::vec3( -4.5f,  0.5f,  0.0f),
+        glm::vec3( -1.5f,  0.5f,  0.0f),
+        glm::vec3(  1.5f,  0.5f,  0.0f),
+        glm::vec3(  4.5f,  0.5f,  0.0f)
     };
     for (GLuint i = 0; i < numPointLightInstances; i++) {
         glm::mat4 modelMatrix = glm::mat4();
@@ -306,7 +307,7 @@ int main(int argc, char *argv[])
         // Draw Plane
         shaderPhongBase.Use();
             modelMatrix = glm::mat4();
-            modelMatrix = glm::scale(modelMatrix, glm::vec3(5.0f));
+            modelMatrix = glm::scale(modelMatrix, glm::vec3(15.0f));
             modelMatrix = glm::rotate(modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
             modelMatrixLocation = glGetUniformLocation(shaderPhongBase.Program, "modelMatrix");
             glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
@@ -344,7 +345,7 @@ int main(int argc, char *argv[])
             glUniform3f(materialAmbientLoc,   1.0f, 0.5f, 0.31f);
             glUniform3f(materialDiffuseLoc,   1.0f, 0.5f, 0.31f);
             glUniform3f(materialSpecularLoc,  0.5f, 0.5f, 0.5f);
-            glUniform1f(materialShininessLoc, 64.0f);
+            glUniform1f(materialShininessLoc, 32.0f);
 
             // Draw
             glDisable(GL_CULL_FACE);
@@ -371,7 +372,7 @@ int main(int argc, char *argv[])
             glUniformMatrix4fv(modelViewProjectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
 
             // Draw
-            light.DrawInstanced(shaderConstInst, 4);
+//            light.DrawInstanced(shaderConstInst, 4);
         glBindVertexArray(0);
         // Swap the current color buffer out for the one just drawn
         glfwSwapBuffers(window);
