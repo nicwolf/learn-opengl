@@ -3,7 +3,6 @@
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
 layout (location = 2) in vec2 uv;
-layout (location = 3) in mat4 instanceModelMatrix;
 
 uniform mat4 lightSpaceMatrix;
 
@@ -18,7 +17,7 @@ layout (std140) uniform Matrices
     uniform mat4 viewMatrix;
 };
 
-out VS_OUT 
+out VS_OUT
 {
     vec3 position;
     vec4 positionLightSpace;
@@ -28,9 +27,9 @@ out VS_OUT
 
 void main()
 {
-    gl_Position = projectionMatrix * viewMatrix * instanceModelMatrix * vec4(position, 1.0);
+    gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);
     vs_out.position = vec3(modelViewMatrix * vec4(position, 1.0));
-    vs_out.positionLightSpace = lightSpaceMatrix * vec4(position, 1.0);
+    vs_out.positionLightSpace = lightSpaceMatrix * modelMatrix * vec4(position, 1.0);
     vs_out.normal = mat3(modelViewMatrixInverseTranspose) * normal;
     vs_out.uv = uv;
 }

@@ -1,8 +1,12 @@
 #version 330 core
 
+float near = 0.1f;
+float far  = 25.0f;
+
 in VS_OUT
 {
     vec3 position;
+    vec4 positionLightSpace;
     vec3 normal;
     vec2 uv;
 } fs_in;
@@ -61,6 +65,9 @@ struct Material {
     float shininess;
 };
 uniform Material material;
+
+uniform sampler2D depthMap;
+float calcShadow();
 
 out vec4 fragColor;
 

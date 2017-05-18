@@ -1,10 +1,10 @@
 #version 330 core
 
+uniform sampler2D screenColorBuffer;
+
 in VS_OUT
 {
     vec3 position;
-    vec4 positionLightSpace;
-    vec3 normal;
     vec2 uv;
 } fs_in;
 
@@ -12,5 +12,5 @@ out vec4 fragColor;
 
 void main()
 {
-    fragColor = vec4(1.0);
+    fragColor = texture(screenColorBuffer, fs_in.uv);
 }

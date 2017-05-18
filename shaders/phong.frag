@@ -3,6 +3,7 @@
 in VS_OUT
 {
     vec3 position;
+    vec4 positionLightSpace;
     vec3 normal;
     vec2 uv;
 } fs_in;
