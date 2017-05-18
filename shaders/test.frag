@@ -14,8 +14,8 @@ uniform sampler2D diffuse;
 out vec4 fragColor;
 
 void main() {
-    vec3 test = fs_in.normal;
-    test *= 0.5;
-    test += 0.5;
-    fragColor = vec4(texture(depthMap, fs_in.uv).rrr, 1.0);
+    vec3 p = fs_in.positionLightSpace.xyz / fs_in.positionLightSpace.w;
+    p *= 0.5;
+    p += 0.5;
+    fragColor = vec4(texture(depthMap, p.xy).rrr, 1.0);
 }
