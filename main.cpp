@@ -16,10 +16,10 @@
 using namespace std;
 
 // Function Prototypes
-void do_movement();
-void mouse_callback(GLFWwindow*, double xPos, double yPos);
-void scroll_callback(GLFWwindow* window, double xOff, double yOff);
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+void doMovement();
+void mouseCallback(GLFWwindow*, double xPos, double yPos);
+void scrollCallback(GLFWwindow* window, double xOff, double yOff);
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
 float clip(float a, float min, float max);
 
 // Input Monitoring
@@ -61,11 +61,11 @@ int main(int argc, char *argv[])
     // Make the window object we created the focus of the current context
     glfwMakeContextCurrent(window);
     // Register our key callbacks
-    glfwSetKeyCallback(window, key_callback);
+    glfwSetKeyCallback(window, keyCallback);
     // Capture Mouse
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback);
+    glfwSetCursorPosCallback(window, mouseCallback);
+    glfwSetScrollCallback(window, scrollCallback);
 
     // GLEW Setup
     // ----------
@@ -150,16 +150,14 @@ int main(int argc, char *argv[])
 
     // Load Shaders
     // ------------
-//    Shader shaderPhongBase("../learn-opengl/shaders/test.vert",
-//                           "../learn-opengl/shaders/test.frag");
-//    Shader shaderConstInst("../learn-opengl/shaders/instanced.vert",
-//                           "../learn-opengl/shaders/constant.frag");
-    Shader shaderDepth("../learn-opengl/shaders/depth.vert",
+    Shader shaderPhongBase("../learn-opengl/shaders/test.vert",
+                           "../learn-opengl/shaders/test.frag");
+    Shader shaderConstInst("../learn-opengl/shaders/instanced.vert",
+                           "../learn-opengl/shaders/constant.frag");
+    Shader shaderDepthMap("../learn-opengl/shaders/depth.vert",
                           "../learn-opengl/shaders/depth.frag");
-    Shader shaderScene("../learn-opengl/shaders/test.vert",
-                       "../learn-opengl/shaders/test.frag");
-    Shader shaderPost("../learn-opengl/shaders/post.vert",
-                      "../learn-opengl/shaders/post.frag");
+    Shader shaderScreen("../learn-opengl/shaders/screen.vert",
+                        "../learn-opengl/shaders/screen.frag");
 
     // Transformation Matrix Uniform Buffers
     // -------------------------------------
@@ -170,10 +168,125 @@ int main(int argc, char *argv[])
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 128);
 
-    GLuint uboMatricesIndexScene = glGetUniformBlockIndex(shaderScene.Program, "Matrices");
-    glUniformBlockBinding(shaderScene.Program, uboMatricesIndexScene, 0);
-    GLuint uboMatricesIndexDepth = glGetUniformBlockIndex(shaderDepth.Program, "Matrices");
-    glUniformBlockBinding(shaderDepth.Program, uboMatricesIndexDepth, 0);
+    GLuint uboMatricesIndexPhongBase = glGetUniformBlockIndex(shaderPhongBase.Program, "Matrices");
+    glUniformBlockBinding(shaderPhongBase.Program, uboMatricesIndexPhongBase, 0);
+    GLuint uboMatricesIndexConstInst = glGetUniformBlockIndex(shaderConstInst.Program, "Matrices");
+    glUniformBlockBinding(shaderConstInst.Program, uboMatricesIndexConstInst, 0);
+    GLuint uboMatricesIndexDepthMap  = glGetUniformBlockIndex(shaderDepthMap.Program, "Matrices");
+    glUniformBlockBinding(shaderDepthMap.Program, uboMatricesIndexConstInst, 0);
+
+    // Lighting Uniform Buffer
+    // -----------------------
+    struct Lights {
+        PointLight pointLights[4];
+        DirectionalLight dirLight;
+        ConeLight coneLight;
+    } lights;
+
+    GLuint uboLights;
+    glGenBuffers(1, &uboLights);
+    glBindBuffer(GL_UNIFORM_BUFFER, uboLights);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(lights), NULL, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glBindBufferRange(GL_UNIFORM_BUFFER, 1, uboLights, 0, sizeof(lights));
+
+    GLuint uboLightsIndexPhongBase = glGetUniformBlockIndex(shaderPhongBase.Program, "Lights");
+    glUniformBlockBinding(shaderPhongBase.Program, uboLightsIndexPhongBase, 1);
+    GLuint uboLightsIndexConstInst = glGetUniformBlockIndex(shaderConstInst.Program, "Lights");
+    glUniformBlockBinding(shaderConstInst.Program, uboLightsIndexConstInst, 1);
+
+    // Lighting
+    // --------
+    // Directional Light
+    lights.dirLight.ambient  = glm::vec3(0.05f, 0.05f, 0.05f);
+    lights.dirLight.diffuse  = glm::vec3(0.3f, 0.3f, 0.3f);
+    lights.dirLight.specular = glm::vec3(1.0f, 1.0f, 1.0f);
+
+    // Point Light #0
+    lights.pointLights[0].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
+    lights.pointLights[0].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
+    lights.pointLights[0].specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    lights.pointLights[0].constantFalloff  = 1.000f;
+    lights.pointLights[0].linearFalloff    = 0.090f;
+    lights.pointLights[0].quadraticFalloff = 0.032f;
+
+    // Point Light #1
+    lights.pointLights[1].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
+    lights.pointLights[1].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
+    lights.pointLights[1].specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    lights.pointLights[1].constantFalloff  = 1.000f;
+    lights.pointLights[1].linearFalloff    = 0.090f;
+    lights.pointLights[1].quadraticFalloff = 0.032f;
+
+    // Point Light #2
+    lights.pointLights[2].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
+    lights.pointLights[2].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
+    lights.pointLights[2].specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    lights.pointLights[2].constantFalloff  = 1.000f;
+    lights.pointLights[2].linearFalloff    = 0.090f;
+    lights.pointLights[2].quadraticFalloff = 0.032f;
+
+    // Point Light #3
+    lights.pointLights[3].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
+    lights.pointLights[3].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
+    lights.pointLights[3].specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    lights.pointLights[3].constantFalloff  = 1.000f;
+    lights.pointLights[3].linearFalloff    = 0.090f;
+    lights.pointLights[3].quadraticFalloff = 0.032f;
+
+    // Cone Light (Flashlight)
+    lights.coneLight.position  = glm::vec3(0.0f, 0.0f,  0.0f);
+    lights.coneLight.direction = glm::vec3(0.0f, 0.0f, -1.0f);
+    lights.coneLight.ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
+    lights.coneLight.diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
+    lights.coneLight.specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    lights.coneLight.cutoff      = glm::cos(glm::radians(12.5));
+    lights.coneLight.outerCutoff = glm::cos(glm::radians(18.5));
+    lights.coneLight.constantFalloff  = 1.000f;
+    lights.coneLight.linearFalloff    = 0.090f;
+    lights.coneLight.quadraticFalloff = 0.032f;
+
+    // Send to UBO
+    glBindBuffer(GL_UNIFORM_BUFFER, uboLights);
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(lights), &lights, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    // Lights
+    // ------
+    GLuint numPointLightInstances = 4;
+    glm::mat4 pointLightInstanceModelMatrices[numPointLightInstances];
+    glm::vec3 pointLightInstancePositions[] = {
+        glm::vec3( 0.0f,  1.5f,  -1.0f),
+        glm::vec3( 0.0f,  1.5f,  -1.0f),
+        glm::vec3( 0.0f,  1.5f,  -1.0f),
+        glm::vec3( 0.0f,  1.5f,  -1.0f)
+    };
+    for (GLuint i = 0; i < numPointLightInstances; i++) {
+        glm::mat4 modelMatrix = glm::mat4();
+        modelMatrix = glm::translate(modelMatrix, pointLightInstancePositions[i]);
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.1f));
+        pointLightInstanceModelMatrices[i] = modelMatrix;
+    }
+    GLuint lightInstanceBuffer;
+    glGenBuffers(1, &lightInstanceBuffer);
+    glBindVertexArray(light.VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, lightInstanceBuffer);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(pointLightInstanceModelMatrices), &pointLightInstanceModelMatrices, GL_STATIC_DRAW);
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 16 * sizeof(GLfloat), (GLvoid*) ( 0 * sizeof(GLfloat)));
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 16 * sizeof(GLfloat), (GLvoid*) ( 4 * sizeof(GLfloat)));
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 16 * sizeof(GLfloat), (GLvoid*) ( 8 * sizeof(GLfloat)));
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 16 * sizeof(GLfloat), (GLvoid*) (12 * sizeof(GLfloat)));
+        glEnableVertexAttribArray(3);
+        glEnableVertexAttribArray(4);
+        glEnableVertexAttribArray(5);
+        glEnableVertexAttribArray(6);
+        glVertexAttribDivisor(3, 1);
+        glVertexAttribDivisor(4, 1);
+        glVertexAttribDivisor(5, 1);
+        glVertexAttribDivisor(6, 1);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
     // Shadow Map FBO
     GLuint depthMapFBO;
     glGenFramebuffers(1, &depthMapFBO);
@@ -249,7 +362,7 @@ int main(int argc, char *argv[])
     while(!glfwWindowShouldClose(window)) {
         // Check if any events need to be processed
         glfwPollEvents();
-        do_movement();
+        doMovement();
 
         // Store the current time
         GLfloat currentFrame = glfwGetTime();
@@ -275,8 +388,7 @@ int main(int argc, char *argv[])
         GLuint modelViewMatrixInverseTransposeLocation;
         GLuint modelViewProjectionMatrixLocation;
 
-        // Depth Pass
-        // ----------
+
         glm::vec3 lightPosition = glm::vec3(1.5f, 1.5f, 4.0f);
         viewMatrix = glm::lookAt(lightPosition,
                                  glm::vec3(0.0f, 0.0f, 0.0f),
@@ -288,76 +400,123 @@ int main(int argc, char *argv[])
         lightSpaceMatrix = projectionMatrix * viewMatrix;
         glViewport(0, 0, DEPTH_MAP_WIDTH, DEPTH_MAP_HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-            glEnable(GL_DEPTH_TEST);
+            // Clear Buffer
             glClear(GL_DEPTH_BUFFER_BIT);
-            shaderDepth.Use();
+
+            // Draw Plane
+            shaderDepthMap.Use();
                 modelMatrix = glm::mat4();
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(5.0f));
                 modelMatrix = glm::rotate(modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-                modelMatrixLocation = glGetUniformLocation(shaderDepth.Program, "modelMatrix");
-                glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-                plane.Draw(shaderDepth);
-
-                modelMatrix = glm::mat4();
-                modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.5f, 0.0f));
-                modelMatrix = glm::scale(modelMatrix, glm::vec3(1.0f));
-                modelMatrixLocation = glGetUniformLocation(shaderDepth.Program, "modelMatrix");
-                glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-                cube.Draw(shaderDepth);
-
-        // Scene Pass
-        // ----------
-        projectionMatrix = glm::perspective(glm::radians(camera.fov), (GLfloat) WIDTH / (GLfloat) HEIGHT, 0.1f, 15.0f);
-        viewMatrix = camera.getViewMatrix();
-        glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
-        glBufferSubData(GL_UNIFORM_BUFFER,  0, 64, glm::value_ptr(projectionMatrix));
-        glBufferSubData(GL_UNIFORM_BUFFER, 64, 64, glm::value_ptr(viewMatrix));
-
-        glViewport(0, 0, WIDTH, HEIGHT);
-        glBindFramebuffer(GL_FRAMEBUFFER, screenFBO);
-            glEnable(GL_DEPTH_TEST);
-            glClearColor(0.1f, 0.2f, 0.2f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            shaderScene.Use();
-                modelMatrix = glm::mat4();
-                modelMatrix = glm::scale(modelMatrix, glm::vec3(5.0f));
-                modelMatrix = glm::rotate(modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-                modelMatrixLocation = glGetUniformLocation(shaderScene.Program, "modelMatrix");
+                modelMatrixLocation = glGetUniformLocation(shaderDepthMap.Program, "modelMatrix");
                 glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
                 modelViewMatrix = viewMatrix * modelMatrix;
-                modelViewMatrixLocation = glGetUniformLocation(shaderScene.Program, "modelViewMatrix");
+                modelViewMatrixLocation = glGetUniformLocation(shaderDepthMap.Program, "modelViewMatrix");
                 glUniformMatrix4fv(modelViewMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
 
                 modelViewMatrixInverseTranspose = glm::inverse(glm::transpose(viewMatrix * modelMatrix));;
-                modelViewMatrixInverseTransposeLocation = glGetUniformLocation(shaderScene.Program, "modelViewMatrixInverseTranspose");
+                modelViewMatrixInverseTransposeLocation = glGetUniformLocation(shaderDepthMap.Program, "modelViewMatrixInverseTranspose");
                 glUniformMatrix4fv(modelViewMatrixInverseTransposeLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrixInverseTranspose));
 
                 modelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
-                modelViewProjectionMatrixLocation = glGetUniformLocation(shaderScene.Program, "modelViewProjectionMatrix");
+                modelViewProjectionMatrixLocation = glGetUniformLocation(shaderDepthMap.Program, "modelViewProjectionMatrix");
                 glUniformMatrix4fv(modelViewProjectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
 
-                lightSpaceMatrixLocation = glGetUniformLocation(shaderScene.Program, "lightSpaceMatrix");
+                // Draw
+                plane.Draw(shaderDepthMap);
+
+            // Draw Box
+            shaderDepthMap.Use();
+                modelMatrix = glm::mat4();
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.5f, 0.0f));
+                modelMatrix = glm::scale(modelMatrix, glm::vec3(1.0f));
+                modelMatrix = glm::rotate(modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                modelMatrixLocation = glGetUniformLocation(shaderDepthMap.Program, "modelMatrix");
+                glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+
+                modelViewMatrix = viewMatrix * modelMatrix;
+                modelViewMatrixLocation = glGetUniformLocation(shaderDepthMap.Program, "modelViewMatrix");
+                glUniformMatrix4fv(modelViewMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
+
+                modelViewMatrixInverseTranspose = glm::inverse(glm::transpose(viewMatrix * modelMatrix));;
+                modelViewMatrixInverseTransposeLocation = glGetUniformLocation(shaderDepthMap.Program, "modelViewMatrixInverseTranspose");
+                glUniformMatrix4fv(modelViewMatrixInverseTransposeLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrixInverseTranspose));
+
+                modelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
+                modelViewProjectionMatrixLocation = glGetUniformLocation(shaderDepthMap.Program, "modelViewProjectionMatrix");
+                glUniformMatrix4fv(modelViewProjectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
+
+                // Draw
+                cube.Draw(shaderDepthMap);
+
+        glViewport(0, 0, WIDTH, HEIGHT);
+        glBindFramebuffer(GL_FRAMEBUFFER, screenFBO);
+            // Clear buffer
+            glClearColor(0.1f, 0.2f, 0.2f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            // Scene Transformation Matrices
+            projectionMatrix = glm::perspective(glm::radians(camera.fov), (GLfloat) WIDTH / (GLfloat) HEIGHT, 0.1f, 15.0f);
+            viewMatrix = camera.getViewMatrix();
+            glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+            glBufferSubData(GL_UNIFORM_BUFFER,  0, 64, glm::value_ptr(projectionMatrix));
+            glBufferSubData(GL_UNIFORM_BUFFER, 64, 64, glm::value_ptr(viewMatrix));
+
+            // Scene Lighting
+            glBindBuffer(GL_UNIFORM_BUFFER, uboLights);
+                lights.dirLight.direction = glm::vec3(glm::transpose(glm::inverse(viewMatrix)) * glm::vec4(-0.5f, -1.0f, 0.0f, 1.0));
+                glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, dirLight.direction), sizeof(glm::vec3), &lights.dirLight.direction);
+                lights.pointLights[0].position = viewMatrix * glm::vec4(pointLightInstancePositions[0], 1.0);
+                glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, pointLights[0].position), sizeof(glm::vec3), &lights.pointLights[0].position);
+                lights.pointLights[1].position = viewMatrix * glm::vec4(pointLightInstancePositions[1], 1.0);
+                glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, pointLights[1].position), sizeof(glm::vec3), &lights.pointLights[1].position);
+                lights.pointLights[2].position = viewMatrix * glm::vec4(pointLightInstancePositions[2], 1.0);
+                glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, pointLights[2].position), sizeof(glm::vec3), &lights.pointLights[2].position);
+                lights.pointLights[3].position = viewMatrix * glm::vec4(pointLightInstancePositions[3], 1.0);
+                glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, pointLights[3].position), sizeof(glm::vec3), &lights.pointLights[3].position);
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+            // Draw Plane
+            shaderPhongBase.Use();
+                modelMatrix = glm::mat4();
+                modelMatrix = glm::scale(modelMatrix, glm::vec3(5.0f));
+                modelMatrix = glm::rotate(modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                modelMatrixLocation = glGetUniformLocation(shaderPhongBase.Program, "modelMatrix");
+                glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+
+                modelViewMatrix = viewMatrix * modelMatrix;
+                modelViewMatrixLocation = glGetUniformLocation(shaderPhongBase.Program, "modelViewMatrix");
+                glUniformMatrix4fv(modelViewMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
+
+                modelViewMatrixInverseTranspose = glm::inverse(glm::transpose(viewMatrix * modelMatrix));;
+                modelViewMatrixInverseTransposeLocation = glGetUniformLocation(shaderPhongBase.Program, "modelViewMatrixInverseTranspose");
+                glUniformMatrix4fv(modelViewMatrixInverseTransposeLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrixInverseTranspose));
+
+                modelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
+                modelViewProjectionMatrixLocation = glGetUniformLocation(shaderPhongBase.Program, "modelViewProjectionMatrix");
+                glUniformMatrix4fv(modelViewProjectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
+
+                lightSpaceMatrixLocation = glGetUniformLocation(shaderPhongBase.Program, "lightSpaceMatrix");
                 glUniformMatrix4fv(lightSpaceMatrixLocation, 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
 
                 // Bind the Diffuse Map
-                glUniform1i(glGetUniformLocation(shaderScene.Program, "material.diffuse"), 0);
+                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "material.diffuse"), 0);
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, floorDiffuseMap);
 
                 // Bind the Diffuse Map
-                glUniform1i(glGetUniformLocation(shaderScene.Program, "diffuse"), 0);
+                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "diffuse"), 0);
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, floorDiffuseMap);
 
                 // Bind the Specular Map
-                glUniform1i(glGetUniformLocation(shaderScene.Program, "material.specular"), 1);
+                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "material.specular"), 1);
                 glActiveTexture(GL_TEXTURE1);
                 glBindTexture(GL_TEXTURE_2D, floorSpecularMap);
 
                 // Bind the Shadow Map
-                GLuint depthMapLocation = glGetUniformLocation(shaderScene.Program, "depthMap");
+                GLuint depthMapLocation = glGetUniformLocation(shaderPhongBase.Program, "depthMap");
                 glUniform1i(depthMapLocation, 2);
                 glActiveTexture(GL_TEXTURE2);
                 glBindTexture(GL_TEXTURE_2D, depthMap);
@@ -365,50 +524,53 @@ int main(int argc, char *argv[])
                 // Send Uniforms
                 // -------------
                 // Material
-                GLuint materialShininessLoc = glGetUniformLocation(shaderScene.Program, "material.shininess");
+                GLuint materialShininessLoc = glGetUniformLocation(shaderPhongBase.Program, "material.shininess");
                 glUniform1f(materialShininessLoc, 32.0f);
 
                 // Draw
-                plane.Draw(shaderScene);
+//                glDisable(GL_CULL_FACE);
+                plane.Draw(shaderPhongBase);
+//                glEnable(GL_CULL_FACE);
 
             // Draw Box
-            shaderScene.Use();
+            shaderPhongBase.Use();
                 modelMatrix = glm::mat4();
                 modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.5f, 0.0f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(1.0f));
-                modelMatrixLocation = glGetUniformLocation(shaderScene.Program, "modelMatrix");
+                modelMatrix = glm::rotate(modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                modelMatrixLocation = glGetUniformLocation(shaderPhongBase.Program, "modelMatrix");
                 glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
                 modelViewMatrix = viewMatrix * modelMatrix;
-                modelViewMatrixLocation = glGetUniformLocation(shaderScene.Program, "modelViewMatrix");
+                modelViewMatrixLocation = glGetUniformLocation(shaderPhongBase.Program, "modelViewMatrix");
                 glUniformMatrix4fv(modelViewMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
 
                 modelViewMatrixInverseTranspose = glm::inverse(glm::transpose(viewMatrix * modelMatrix));;
-                modelViewMatrixInverseTransposeLocation = glGetUniformLocation(shaderScene.Program, "modelViewMatrixInverseTranspose");
+                modelViewMatrixInverseTransposeLocation = glGetUniformLocation(shaderPhongBase.Program, "modelViewMatrixInverseTranspose");
                 glUniformMatrix4fv(modelViewMatrixInverseTransposeLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrixInverseTranspose));
 
                 modelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
-                modelViewProjectionMatrixLocation = glGetUniformLocation(shaderScene.Program, "modelViewProjectionMatrix");
+                modelViewProjectionMatrixLocation = glGetUniformLocation(shaderPhongBase.Program, "modelViewProjectionMatrix");
                 glUniformMatrix4fv(modelViewProjectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
 
-                lightSpaceMatrixLocation = glGetUniformLocation(shaderScene.Program, "lightSpaceMatrix");
+                lightSpaceMatrixLocation = glGetUniformLocation(shaderPhongBase.Program, "lightSpaceMatrix");
                 glUniformMatrix4fv(lightSpaceMatrixLocation, 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
 
                 // Bind the Diffuse Map
-                glUniform1i(glGetUniformLocation(shaderScene.Program, "material.diffuse"), 0);
+                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "material.diffuse"), 0);
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, diffuseMap);
 
-                glUniform1i(glGetUniformLocation(shaderScene.Program, "diffuse"), 0);
+                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "diffuse"), 0);
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, diffuseMap);
 
                 // Bind the Specular Map
-                glUniform1i(glGetUniformLocation(shaderScene.Program, "material.specular"), 1);
+                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "material.specular"), 1);
                 glActiveTexture(GL_TEXTURE1);
                 glBindTexture(GL_TEXTURE_2D, specularMap);
 
-                depthMapLocation = glGetUniformLocation(shaderScene.Program, "depthMap");
+                depthMapLocation = glGetUniformLocation(shaderPhongBase.Program, "depthMap");
                 glUniform1i(depthMapLocation, 2);
                 glActiveTexture(GL_TEXTURE2);
                 glBindTexture(GL_TEXTURE_2D, depthMap);
@@ -416,18 +578,38 @@ int main(int argc, char *argv[])
                 // Send Uniforms
                 // -------------
                 // Material
-                materialShininessLoc = glGetUniformLocation(shaderScene.Program, "material.shininess");
+                materialShininessLoc = glGetUniformLocation(shaderPhongBase.Program, "material.shininess");
                 glUniform1f(materialShininessLoc, 32.0f);
 
                 // Draw
-                cube.Draw(shaderScene);
+                cube.Draw(shaderPhongBase);
+
+            // Draw Light
+            shaderConstInst.Use();
+                // Send colors
+                glUniform3f(glGetUniformLocation(shaderConstInst.Program, "lightColor"), 1.0f, 1.0f, 1.0f);
+
+                modelViewMatrix = viewMatrix * modelMatrix;
+                modelViewMatrixLocation = glGetUniformLocation(shaderConstInst.Program, "modelViewMatrix");
+                glUniformMatrix4fv(modelViewMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
+
+                modelViewMatrixInverseTranspose = glm::inverse(glm::transpose(viewMatrix * modelMatrix));;
+                modelViewMatrixInverseTransposeLocation = glGetUniformLocation(shaderConstInst.Program, "modelViewMatrixInverseTranspose");
+                glUniformMatrix4fv(modelViewMatrixInverseTransposeLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrixInverseTranspose));
+
+                modelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
+                modelViewProjectionMatrixLocation = glGetUniformLocation(shaderConstInst.Program, "modelViewProjectionMatrix");
+                glUniformMatrix4fv(modelViewProjectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
+
+                // Draw
+                // light.DrawInstanced(shaderConstInst, 4);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glEnable(GL_FRAMEBUFFER_SRGB);
             // Clear buffer
             glClearColor(0.1f, 0.2f, 0.2f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
-            shaderPost.Use();
+            shaderScreen.Use();
                 glBindVertexArray(screenVAO);
                 glDisable(GL_DEPTH_TEST);
                 glActiveTexture(GL_TEXTURE0);
@@ -450,7 +632,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void do_movement() {
+void doMovement() {
     GLfloat cameraSpeed = 10.0f * deltaTime;
     if (keys[GLFW_KEY_W]) {
         camera.processKeyboard(FORWARD, deltaTime);
@@ -468,7 +650,7 @@ void do_movement() {
     }
 }
 
-void key_callback(GLFWwindow* window, int key, int scandcode, int action, int mode) {
+void keyCallback(GLFWwindow* window, int key, int scandcode, int action, int mode) {
     if (action == GLFW_PRESS) {
         keys[key] = true;
     }
@@ -503,7 +685,7 @@ void key_callback(GLFWwindow* window, int key, int scandcode, int action, int mo
     }
 }
 
-void mouse_callback(GLFWwindow* window, double xPos, double yPos) {
+void mouseCallback(GLFWwindow* window, double xPos, double yPos) {
     if (firstMouseMovement) {
         mouseXLast = xPos;
         mouseYLast = yPos;
@@ -521,7 +703,7 @@ void mouse_callback(GLFWwindow* window, double xPos, double yPos) {
     camera.processMouseMovement(xOff, yOff);
 }
 
-void scroll_callback(GLFWwindow* window, double xOff, double yOff) {
+void scrollCallback(GLFWwindow* window, double xOff, double yOff) {
     camera.processMouseScroll(yOff);
 }
 
