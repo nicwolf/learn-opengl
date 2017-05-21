@@ -6,18 +6,13 @@ add_executable(${PROJECT_NAME}
     shaders/base.vert
     shaders/instanced.vert
     shaders/phong.frag
-    shaders/phong-blinn.frag
+    shaders/blinn.frag
     shaders/constant.frag
     shaders/depth.vert
     shaders/depth.frag
-    shaders/screen.vert
-    shaders/screen.frag
-    shaders/test.vert
-    shaders/test.frag
-    shaders/scene.vert
-    shaders/scene.frag
-    shaders/post.frag
     shaders/post.vert
+    shaders/post.frag
+    shaders/post-depth.frag
 )
 find_package(glfw3 3.2 REQUIRED)
 target_link_libraries(learn-opengl glfw)

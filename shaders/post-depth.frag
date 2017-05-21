@@ -1,24 +1,23 @@
 #version 330 core
 
-uniform sampler2D screenColorBuffer;
-
 in VS_OUT
 {
     vec3 position;
     vec2 uv;
 } fs_in;
 
+uniform sampler2D depthMap;
+uniform float far;
+uniform float near;
+
 float linearizeDepth(float depth);
-const float near = 0.10f;
-const float far  = 10.0f;
 
 out vec4 fragColor;
 
-void main()
-{
-    float depth = texture(screenColorBuffer, fs_in.uv).r;
-    fragColor = vec4(vec3(linearizeDepth(depth)), 1.0);
-//    fragColor = texture(screenColorBuffer, fs_in.uv);
+void main() {
+    fragColor = vec4(vec3(texture(depthMap, fs_in.uv).r), 1.0);
+//    fragColor = vec4(vec3(linearizeDepth(depth) / far), 1.0);
+//    fragColor = texture(depthMap, fs_in.uv);
 }
 
 float linearizeDepth(float depth) {

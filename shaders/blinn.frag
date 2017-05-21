@@ -1,8 +1,5 @@
 #version 330 core
 
-float near = 0.1f;
-float far  = 25.0f;
-
 in VS_OUT
 {
     vec3 position;
@@ -67,6 +64,8 @@ struct Material {
 uniform Material material;
 
 uniform sampler2D depthMap;
+const float MIN_SHADOW_BIAS = 0.000;
+const float MAX_SHADOW_BIAS = 0.003;
 float calcShadow();
 
 out vec4 fragColor;
@@ -77,10 +76,30 @@ void main() {
     vec3 result = vec3(0.0);
     result += calcDirLight(dirLight, normal, viewDir);
     for (int i = 0; i < 4; i++) {
-        result += calcPointLight(pointLights[i], normal, viewDir);
+//        result += calcPointLight(pointLights[i], normal, viewDir);
     }
-    result += calcConeLight(coneLight, normal, viewDir);
+//    result += calcConeLight(coneLight, normal, viewDir);
+    result -= calcShadow();
     fragColor = vec4(result, 1.0);
+}
+
+float calcShadow() {
+    vec3 lightDir = normalize(-dirLight.direction);
+    vec3 normal   = normalize(fs_in.normal);
+    vec3 p = fs_in.positionLightSpace.xyz / fs_in.positionLightSpace.w;
+    p *= 0.5f;
+    p += 0.5f;
+    if (p.z >= 1.0) {
+        return 0.0f;
+    }
+    float closestDepth  = texture(depthMap, p.xy).r;
+    float fragmentDepth = p.z;
+    float shadow;
+    float bias = max(MAX_SHADOW_BIAS * (1 - dot(normal, lightDir)), MIN_SHADOW_BIAS);
+    if (fragmentDepth - bias < closestDepth) {
+        return 0.0f;
+    }
+    return 1.0f;
 }
 
 vec3 calcDirLight(DirectionalLight light, vec3 normal, vec3 viewDir) {

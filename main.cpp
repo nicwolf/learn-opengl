@@ -1,3 +1,10 @@
+// ############
+// Learn OpenGL
+// ############
+
+// ********
+// Includes
+// ********
 #include <iostream>
 #include <math.h>
 #include <GL/glew.h>
@@ -15,60 +22,64 @@
 
 using namespace std;
 
+// *******************
 // Function Prototypes
+// *******************
 void doMovement();
 void mouseCallback(GLFWwindow*, double xPos, double yPos);
 void scrollCallback(GLFWwindow* window, double xOff, double yOff);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
 float clip(float a, float min, float max);
 
-// Input Monitoring
-GLfloat mouseXLast = 400, mouseYLast = 300;
+// *****
+// Input
+// *****
+GLfloat mouseXLast, mouseYLast;
 bool firstMouseMovement = true;
 bool keys[1024];
+const glm::vec3 CAMERA_START_POS = glm::vec3(0.0f, 1.0f, 5.0f);
+Camera camera(CAMERA_START_POS);
 
-// Camera Setup
-Camera camera(glm::vec3(0.0f, 0.5f, 2.0f));
-
+// *****************
 // Global Properties
-GLfloat mixConstant;
+// *****************
+GLuint WINDOW_WIDTH, WINDOW_HEIGHT;
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
+bool visualizeDepth = false;
 
+// ****
+// Main
+// ****
 int main(int argc, char *argv[])
 {
-    // Administrivia
-    // -------------
-    // Initialize GLFW
+    // GLFW Setup
+    // ==========
     glfwInit();
-    // Configure GLFW
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-    const GLuint WIDTH  = 800;
-    const GLuint HEIGHT = 600;
+    WINDOW_WIDTH  = 800;
+    WINDOW_HEIGHT = 600;
 
     // Window Setup
-    // ------------
+    // ============
     // Create a window object
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "LearnOpenGL", nullptr, nullptr);
     if (window == nullptr) {
         std::cout << "Failed to create GLFW window." << std::endl;
         glfwTerminate();
         return -1;
     }
-    // Make the window object we created the focus of the current context
     glfwMakeContextCurrent(window);
-    // Register our key callbacks
     glfwSetKeyCallback(window, keyCallback);
-    // Capture Mouse
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, mouseCallback);
     glfwSetScrollCallback(window, scrollCallback);
 
     // GLEW Setup
-    // ----------
+    // ==========
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) {
         std::cout << "Failed to initialize GLEW" << std::endl;
@@ -76,23 +87,20 @@ int main(int argc, char *argv[])
     }
 
     // Viewport Setup
-    // --------------
-    glViewport(0, 0, WIDTH, HEIGHT);
+    // ==============
+    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
-    // OpenGL Options
-    // --------------
-    glEnable(GL_DEPTH_TEST);
-//    glEnable(GL_CULL_FACE);
-
-    // Create Geometry
-    // ---------------
+    // Geometry Creation
+    // =================
     Plane plane = Plane();
     Box light = Box();
     Box cube = Box();
 
-    // Setup Textures
-    // --------------
+    // Texture Loading
+    // ===============
+
     // Floor Diffuse Map
+    // -----------------
     int floorDiffuseMapImgWidth, floorDiffuseMapImgHeight;
     const char* floorDiffuseMapImgPath = "../learn-opengl/assets/wall.jpg";
     unsigned char* floorDiffuseMapImg = SOIL_load_image(floorDiffuseMapImgPath, &floorDiffuseMapImgWidth, &floorDiffuseMapImgHeight, 0, SOIL_LOAD_RGB);
@@ -107,6 +115,7 @@ int main(int argc, char *argv[])
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Floor Specular Map
+    // ------------------
     GLuint floorSpecularMap;
     glGenTextures(1, & floorSpecularMap);
     glBindTexture(GL_TEXTURE_2D, floorSpecularMap);
@@ -117,6 +126,7 @@ int main(int argc, char *argv[])
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Box Diffuse Map
+    // ---------------
     int diffuseMapImgWidth, diffuseMapImgHeight;
     const char* diffuseMapImgPath = "../learn-opengl/assets/diffuseMap.png";
     unsigned char* diffuseMapImg = SOIL_load_image(diffuseMapImgPath, &diffuseMapImgWidth, &diffuseMapImgHeight, 0, SOIL_LOAD_RGB);
@@ -135,6 +145,7 @@ int main(int argc, char *argv[])
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Box Specular Map
+    // ----------------
     int specularMapImgWidth, specularMapImgHeight;
     const char* specularMapImgPath = "../learn-opengl/assets/specularMap.png";
     unsigned char* specularMapImg = SOIL_load_image(specularMapImgPath, &specularMapImgWidth, &specularMapImgHeight, 0, SOIL_LOAD_RGB);
@@ -148,19 +159,24 @@ int main(int argc, char *argv[])
     SOIL_free_image_data(specularMapImg);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    // Load Shaders
-    // ------------
-    Shader shaderPhongBase("../learn-opengl/shaders/test.vert",
-                           "../learn-opengl/shaders/test.frag");
+    // Shader Compilation
+    // ==================
+    Shader shaderPhongBase("../learn-opengl/shaders/base.vert",
+                           "../learn-opengl/shaders/blinn.frag");
     Shader shaderConstInst("../learn-opengl/shaders/instanced.vert",
                            "../learn-opengl/shaders/constant.frag");
     Shader shaderDepthMap("../learn-opengl/shaders/depth.vert",
                           "../learn-opengl/shaders/depth.frag");
-    Shader shaderScreen("../learn-opengl/shaders/screen.vert",
-                        "../learn-opengl/shaders/screen.frag");
+    Shader shaderPost("../learn-opengl/shaders/post.vert",
+                        "../learn-opengl/shaders/post.frag");
+    Shader shaderPostDepth("../learn-opengl/shaders/post.vert",
+                           "../learn-opengl/shaders/post-depth.frag");
 
-    // Transformation Matrix Uniform Buffers
-    // -------------------------------------
+    // Uniform Buffer Setup
+    // ====================
+
+    // Transformation Matrix UBO
+    // -------------------------
     GLuint uboMatrices;
     glGenBuffers(1, &uboMatrices);
     glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
@@ -175,8 +191,8 @@ int main(int argc, char *argv[])
     GLuint uboMatricesIndexDepthMap  = glGetUniformBlockIndex(shaderDepthMap.Program, "Matrices");
     glUniformBlockBinding(shaderDepthMap.Program, uboMatricesIndexConstInst, 0);
 
-    // Lighting Uniform Buffer
-    // -----------------------
+    // Lighting UBO
+    // ------------
     struct Lights {
         PointLight pointLights[4];
         DirectionalLight dirLight;
@@ -195,14 +211,17 @@ int main(int argc, char *argv[])
     GLuint uboLightsIndexConstInst = glGetUniformBlockIndex(shaderConstInst.Program, "Lights");
     glUniformBlockBinding(shaderConstInst.Program, uboLightsIndexConstInst, 1);
 
-    // Lighting
-    // --------
+    // Lighting Setup
+    // ==============
+
     // Directional Light
+    // -----------------
     lights.dirLight.ambient  = glm::vec3(0.05f, 0.05f, 0.05f);
     lights.dirLight.diffuse  = glm::vec3(0.3f, 0.3f, 0.3f);
     lights.dirLight.specular = glm::vec3(1.0f, 1.0f, 1.0f);
 
     // Point Light #0
+    // --------------
     lights.pointLights[0].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
     lights.pointLights[0].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
     lights.pointLights[0].specular = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -211,6 +230,7 @@ int main(int argc, char *argv[])
     lights.pointLights[0].quadraticFalloff = 0.032f;
 
     // Point Light #1
+    // --------------
     lights.pointLights[1].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
     lights.pointLights[1].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
     lights.pointLights[1].specular = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -219,6 +239,7 @@ int main(int argc, char *argv[])
     lights.pointLights[1].quadraticFalloff = 0.032f;
 
     // Point Light #2
+    // --------------
     lights.pointLights[2].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
     lights.pointLights[2].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
     lights.pointLights[2].specular = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -227,6 +248,7 @@ int main(int argc, char *argv[])
     lights.pointLights[2].quadraticFalloff = 0.032f;
 
     // Point Light #3
+    // --------------
     lights.pointLights[3].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
     lights.pointLights[3].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
     lights.pointLights[3].specular = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -235,6 +257,7 @@ int main(int argc, char *argv[])
     lights.pointLights[3].quadraticFalloff = 0.032f;
 
     // Cone Light (Flashlight)
+    // -----------------------
     lights.coneLight.position  = glm::vec3(0.0f, 0.0f,  0.0f);
     lights.coneLight.direction = glm::vec3(0.0f, 0.0f, -1.0f);
     lights.coneLight.ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
@@ -246,13 +269,14 @@ int main(int argc, char *argv[])
     lights.coneLight.linearFalloff    = 0.090f;
     lights.coneLight.quadraticFalloff = 0.032f;
 
-    // Send to UBO
+    // Upload
+    // ------
     glBindBuffer(GL_UNIFORM_BUFFER, uboLights);
         glBufferData(GL_UNIFORM_BUFFER, sizeof(lights), &lights, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    // Lights
-    // ------
+    // Point Light Instancing
+    // ----------------------
     GLuint numPointLightInstances = 4;
     glm::mat4 pointLightInstanceModelMatrices[numPointLightInstances];
     glm::vec3 pointLightInstancePositions[] = {
@@ -287,57 +311,72 @@ int main(int argc, char *argv[])
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    // Shadow Map FBO
+    // Frame Buffer Setup
+    // ==================
+
+    // Depth Map FBO
+    // -------------
     GLuint depthMapFBO;
     glGenFramebuffers(1, &depthMapFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 
     const GLuint DEPTH_MAP_WIDTH = 1024, DEPTH_MAP_HEIGHT = 1024;
-
     GLuint depthMap;
     glGenTextures(1, &depthMap);
     glBindTexture(GL_TEXTURE_2D, depthMap);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
                  DEPTH_MAP_WIDTH, DEPTH_MAP_HEIGHT,
                  0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    GLfloat borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
+
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // Screenbuffer FBO
-    GLuint screenFBO;
-    glGenFramebuffers(1, &screenFBO);
-    glBindFramebuffer(GL_FRAMEBUFFER, screenFBO);
+    // Scene FBO
+    // ---------
+    GLuint sceneFBO;
+    glGenFramebuffers(1, &sceneFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
 
-    GLuint screenColorBuffer;
-    glGenTextures(1, &screenColorBuffer);
-    glBindTexture(GL_TEXTURE_2D, screenColorBuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WIDTH, HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    GLuint sceneColorBuffer;
+    glGenTextures(1, &sceneColorBuffer);
+    glBindTexture(GL_TEXTURE_2D, sceneColorBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screenColorBuffer, 0);
 
-    GLuint screenRBO;
-    glGenRenderbuffers(1, &screenRBO);
-    glBindRenderbuffer(GL_RENDERBUFFER, screenRBO);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WIDTH, HEIGHT);
+    GLuint sceneRBO;
+    glGenRenderbuffers(1, &sceneRBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, sceneRBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, screenRBO);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sceneColorBuffer, 0);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, sceneRBO);
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    // Post Processing Setup
+    // =====================
+
+    // Screen Geometry Creation
+    // ------------------------
     GLfloat screenVertices[] = {
         -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
         -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
@@ -356,23 +395,20 @@ int main(int argc, char *argv[])
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
     glBindBuffer(GL_BUFFER, 0);
 
-
     // Render Loop
-    // -----------
+    // ===========
     while(!glfwWindowShouldClose(window)) {
-        // Check if any events need to be processed
+
+        // Event Processing
+        // ----------------
         glfwPollEvents();
         doMovement();
-
-        // Store the current time
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        // Settings
-        glEnable(GL_DEPTH_TEST);
-
         // Transformation Matrices
+        // -----------------------
         glm::mat4 lightSpaceMatrix;
         glm::mat4 projectionMatrix;
         glm::mat4 viewMatrix;
@@ -387,27 +423,37 @@ int main(int argc, char *argv[])
         GLuint modelViewMatrixLocation;
         GLuint modelViewMatrixInverseTransposeLocation;
         GLuint modelViewProjectionMatrixLocation;
+        glm::vec3 dirLightDirection = glm::vec3(-1.5f, -1.5f, -4.0f);
 
+        // Depth Pass
+        // ----------
 
-        glm::vec3 lightPosition = glm::vec3(1.5f, 1.5f, 4.0f);
-        viewMatrix = glm::lookAt(lightPosition,
-                                 glm::vec3(0.0f, 0.0f, 0.0f),
-                                 glm::vec3(0.0f, 1.0f, 0.0f));
-        projectionMatrix = glm::ortho(-4.0, 4.0, -4.0, 4.0, 0.1, 10.0);
+        // Transformation Matrix Computation
+        viewMatrix = glm::lookAt(-dirLightDirection, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        GLdouble DEPTH_PASS_NEAR = 0.10;
+        GLdouble DEPTH_PASS_FAR  = 10.0;
+        projectionMatrix = glm::ortho(-4.0, 4.0, -4.0, 4.0, DEPTH_PASS_NEAR, DEPTH_PASS_FAR);
+        lightSpaceMatrix = projectionMatrix * viewMatrix;
+
+        // Transformation Matrix UBO Update
         glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
         glBufferSubData(GL_UNIFORM_BUFFER,  0, 64, glm::value_ptr(projectionMatrix));
         glBufferSubData(GL_UNIFORM_BUFFER, 64, 64, glm::value_ptr(viewMatrix));
-        lightSpaceMatrix = projectionMatrix * viewMatrix;
+
+        // Draw
         glViewport(0, 0, DEPTH_MAP_WIDTH, DEPTH_MAP_HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-            // Clear Buffer
             glClear(GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+//            glEnable(GL_CULL_FACE);
+//            glCullFace(GL_FRONT);
 
-            // Draw Plane
             shaderDepthMap.Use();
+
+                // Draw Plane
                 modelMatrix = glm::mat4();
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(5.0f));
-                modelMatrix = glm::rotate(modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                modelMatrix = glm::rotate(modelMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
                 modelMatrixLocation = glGetUniformLocation(shaderDepthMap.Program, "modelMatrix");
                 glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
@@ -423,15 +469,12 @@ int main(int argc, char *argv[])
                 modelViewProjectionMatrixLocation = glGetUniformLocation(shaderDepthMap.Program, "modelViewProjectionMatrix");
                 glUniformMatrix4fv(modelViewProjectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
 
-                // Draw
                 plane.Draw(shaderDepthMap);
 
-            // Draw Box
-            shaderDepthMap.Use();
+                // Draw Box
                 modelMatrix = glm::mat4();
                 modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.5f, 0.0f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(1.0f));
-                modelMatrix = glm::rotate(modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
                 modelMatrixLocation = glGetUniformLocation(shaderDepthMap.Program, "modelMatrix");
                 glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
@@ -447,38 +490,45 @@ int main(int argc, char *argv[])
                 modelViewProjectionMatrixLocation = glGetUniformLocation(shaderDepthMap.Program, "modelViewProjectionMatrix");
                 glUniformMatrix4fv(modelViewProjectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
 
-                // Draw
                 cube.Draw(shaderDepthMap);
 
-        glViewport(0, 0, WIDTH, HEIGHT);
-        glBindFramebuffer(GL_FRAMEBUFFER, screenFBO);
-            // Clear buffer
+        // Scene Pass
+        // ----------
+
+        // Transformation Matrix Computation
+        projectionMatrix = glm::perspective(glm::radians(camera.fov), (GLfloat) WINDOW_WIDTH / (GLfloat) WINDOW_HEIGHT, 0.1f, 15.0f);
+        viewMatrix = camera.getViewMatrix();
+
+        // Light UBO Update
+        glBindBuffer(GL_UNIFORM_BUFFER, uboLights);
+            lights.dirLight.direction = glm::vec3(glm::transpose(glm::inverse(viewMatrix)) * glm::vec4(dirLightDirection, 1.0));
+            glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, dirLight.direction), sizeof(glm::vec3), &lights.dirLight.direction);
+            lights.pointLights[0].position = viewMatrix * glm::vec4(pointLightInstancePositions[0], 1.0);
+            glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, pointLights[0].position), sizeof(glm::vec3), &lights.pointLights[0].position);
+            lights.pointLights[1].position = viewMatrix * glm::vec4(pointLightInstancePositions[1], 1.0);
+            glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, pointLights[1].position), sizeof(glm::vec3), &lights.pointLights[1].position);
+            lights.pointLights[2].position = viewMatrix * glm::vec4(pointLightInstancePositions[2], 1.0);
+            glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, pointLights[2].position), sizeof(glm::vec3), &lights.pointLights[2].position);
+            lights.pointLights[3].position = viewMatrix * glm::vec4(pointLightInstancePositions[3], 1.0);
+            glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, pointLights[3].position), sizeof(glm::vec3), &lights.pointLights[3].position);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+        // Transformation Matrix UBO Update
+        glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+        glBufferSubData(GL_UNIFORM_BUFFER,  0, 64, glm::value_ptr(projectionMatrix));
+        glBufferSubData(GL_UNIFORM_BUFFER, 64, 64, glm::value_ptr(viewMatrix));
+
+        // Draw
+        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+        glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
             glClearColor(0.1f, 0.2f, 0.2f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+//            glCullFace(GL_BACK);
 
-            // Scene Transformation Matrices
-            projectionMatrix = glm::perspective(glm::radians(camera.fov), (GLfloat) WIDTH / (GLfloat) HEIGHT, 0.1f, 15.0f);
-            viewMatrix = camera.getViewMatrix();
-            glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
-            glBufferSubData(GL_UNIFORM_BUFFER,  0, 64, glm::value_ptr(projectionMatrix));
-            glBufferSubData(GL_UNIFORM_BUFFER, 64, 64, glm::value_ptr(viewMatrix));
-
-            // Scene Lighting
-            glBindBuffer(GL_UNIFORM_BUFFER, uboLights);
-                lights.dirLight.direction = glm::vec3(glm::transpose(glm::inverse(viewMatrix)) * glm::vec4(-0.5f, -1.0f, 0.0f, 1.0));
-                glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, dirLight.direction), sizeof(glm::vec3), &lights.dirLight.direction);
-                lights.pointLights[0].position = viewMatrix * glm::vec4(pointLightInstancePositions[0], 1.0);
-                glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, pointLights[0].position), sizeof(glm::vec3), &lights.pointLights[0].position);
-                lights.pointLights[1].position = viewMatrix * glm::vec4(pointLightInstancePositions[1], 1.0);
-                glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, pointLights[1].position), sizeof(glm::vec3), &lights.pointLights[1].position);
-                lights.pointLights[2].position = viewMatrix * glm::vec4(pointLightInstancePositions[2], 1.0);
-                glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, pointLights[2].position), sizeof(glm::vec3), &lights.pointLights[2].position);
-                lights.pointLights[3].position = viewMatrix * glm::vec4(pointLightInstancePositions[3], 1.0);
-                glBufferSubData(GL_UNIFORM_BUFFER, offsetof(Lights, pointLights[3].position), sizeof(glm::vec3), &lights.pointLights[3].position);
-            glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-            // Draw Plane
             shaderPhongBase.Use();
+
+                // Draw Plane
                 modelMatrix = glm::mat4();
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(5.0f));
                 modelMatrix = glm::rotate(modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -500,44 +550,29 @@ int main(int argc, char *argv[])
                 lightSpaceMatrixLocation = glGetUniformLocation(shaderPhongBase.Program, "lightSpaceMatrix");
                 glUniformMatrix4fv(lightSpaceMatrixLocation, 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
 
-                // Bind the Diffuse Map
                 glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "material.diffuse"), 0);
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, floorDiffuseMap);
 
-                // Bind the Diffuse Map
-                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "diffuse"), 0);
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, floorDiffuseMap);
-
-                // Bind the Specular Map
                 glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "material.specular"), 1);
                 glActiveTexture(GL_TEXTURE1);
                 glBindTexture(GL_TEXTURE_2D, floorSpecularMap);
 
-                // Bind the Shadow Map
-                GLuint depthMapLocation = glGetUniformLocation(shaderPhongBase.Program, "depthMap");
-                glUniform1i(depthMapLocation, 2);
+                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "depthMap"), 2);
                 glActiveTexture(GL_TEXTURE2);
                 glBindTexture(GL_TEXTURE_2D, depthMap);
 
-                // Send Uniforms
-                // -------------
-                // Material
                 GLuint materialShininessLoc = glGetUniformLocation(shaderPhongBase.Program, "material.shininess");
                 glUniform1f(materialShininessLoc, 32.0f);
 
-                // Draw
-//                glDisable(GL_CULL_FACE);
+                glDisable(GL_CULL_FACE);
                 plane.Draw(shaderPhongBase);
-//                glEnable(GL_CULL_FACE);
+                glEnable(GL_CULL_FACE);
 
-            // Draw Box
-            shaderPhongBase.Use();
+                // Draw Box
                 modelMatrix = glm::mat4();
                 modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.5f, 0.0f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(1.0f));
-                modelMatrix = glm::rotate(modelMatrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
                 modelMatrixLocation = glGetUniformLocation(shaderPhongBase.Program, "modelMatrix");
                 glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
@@ -556,79 +591,85 @@ int main(int argc, char *argv[])
                 lightSpaceMatrixLocation = glGetUniformLocation(shaderPhongBase.Program, "lightSpaceMatrix");
                 glUniformMatrix4fv(lightSpaceMatrixLocation, 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
 
-                // Bind the Diffuse Map
                 glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "material.diffuse"), 0);
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, diffuseMap);
 
-                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "diffuse"), 0);
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, diffuseMap);
-
-                // Bind the Specular Map
                 glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "material.specular"), 1);
                 glActiveTexture(GL_TEXTURE1);
                 glBindTexture(GL_TEXTURE_2D, specularMap);
 
-                depthMapLocation = glGetUniformLocation(shaderPhongBase.Program, "depthMap");
-                glUniform1i(depthMapLocation, 2);
+                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "depthMap"), 2);
                 glActiveTexture(GL_TEXTURE2);
                 glBindTexture(GL_TEXTURE_2D, depthMap);
 
-                // Send Uniforms
-                // -------------
-                // Material
                 materialShininessLoc = glGetUniformLocation(shaderPhongBase.Program, "material.shininess");
                 glUniform1f(materialShininessLoc, 32.0f);
 
-                // Draw
                 cube.Draw(shaderPhongBase);
 
-            // Draw Light
-            shaderConstInst.Use();
-                // Send colors
-                glUniform3f(glGetUniformLocation(shaderConstInst.Program, "lightColor"), 1.0f, 1.0f, 1.0f);
+//            // Draw Lights
+//            shaderConstInst.Use();
+//                glUniform3f(glGetUniformLocation(shaderConstInst.Program, "lightColor"), 1.0f, 1.0f, 1.0f);
 
-                modelViewMatrix = viewMatrix * modelMatrix;
-                modelViewMatrixLocation = glGetUniformLocation(shaderConstInst.Program, "modelViewMatrix");
-                glUniformMatrix4fv(modelViewMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
+//                modelViewMatrix = viewMatrix * modelMatrix;
+//                modelViewMatrixLocation = glGetUniformLocation(shaderConstInst.Program, "modelViewMatrix");
+//                glUniformMatrix4fv(modelViewMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrix));
 
-                modelViewMatrixInverseTranspose = glm::inverse(glm::transpose(viewMatrix * modelMatrix));;
-                modelViewMatrixInverseTransposeLocation = glGetUniformLocation(shaderConstInst.Program, "modelViewMatrixInverseTranspose");
-                glUniformMatrix4fv(modelViewMatrixInverseTransposeLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrixInverseTranspose));
+//                modelViewMatrixInverseTranspose = glm::inverse(glm::transpose(viewMatrix * modelMatrix));;
+//                modelViewMatrixInverseTransposeLocation = glGetUniformLocation(shaderConstInst.Program, "modelViewMatrixInverseTranspose");
+//                glUniformMatrix4fv(modelViewMatrixInverseTransposeLocation, 1, GL_FALSE, glm::value_ptr(modelViewMatrixInverseTranspose));
 
-                modelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
-                modelViewProjectionMatrixLocation = glGetUniformLocation(shaderConstInst.Program, "modelViewProjectionMatrix");
-                glUniformMatrix4fv(modelViewProjectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
+//                modelViewProjectionMatrix = projectionMatrix * viewMatrix * modelMatrix;
+//                modelViewProjectionMatrixLocation = glGetUniformLocation(shaderConstInst.Program, "modelViewProjectionMatrix");
+//                glUniformMatrix4fv(modelViewProjectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
 
-                // Draw
-                // light.DrawInstanced(shaderConstInst, 4);
+//                light.DrawInstanced(shaderConstInst, 4);
 
+        // Visualize Depth
+        // ---------------
+        if (visualizeDepth) {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                glClearColor(0.1f, 0.2f, 0.2f, 1.0f);
+                glClear(GL_COLOR_BUFFER_BIT);
+                glDisable(GL_DEPTH_TEST);
+                shaderPostDepth.Use();
+                    GLuint nearLocation = glGetUniformLocation(shaderPostDepth.Program, "near");
+                    glUniform1f(nearLocation, DEPTH_PASS_NEAR);
+                    GLuint farLocation  = glGetUniformLocation(shaderPostDepth.Program, "far");
+                    glUniform1f(nearLocation, DEPTH_PASS_FAR);
+                    glBindVertexArray(screenVAO);
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, depthMap);
+                    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+                    glBindVertexArray(0);
+            glfwSwapBuffers(window);
+            continue;
+        }
+
+        // Post Pass
+        // ---------
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glEnable(GL_FRAMEBUFFER_SRGB);
-            // Clear buffer
             glClearColor(0.1f, 0.2f, 0.2f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
-            shaderScreen.Use();
+            glDisable(GL_DEPTH_TEST);
+            shaderPost.Use();
                 glBindVertexArray(screenVAO);
-                glDisable(GL_DEPTH_TEST);
                 glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, screenColorBuffer);
+                glBindTexture(GL_TEXTURE_2D, sceneColorBuffer);
                 glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
                 glBindVertexArray(0);
-
-        // Swap the current color buffer out for the one just drawn
-        glfwSwapBuffers(window);
         glDisable(GL_FRAMEBUFFER_SRGB);
-
+        glfwSwapBuffers(window);
     }
 
     // Clean Up
-    // --------
+    // ========
     glfwTerminate();
 
     // Exit
-    // ----
+    // ====
     return 0;
 }
 
@@ -661,7 +702,7 @@ void keyCallback(GLFWwindow* window, int key, int scandcode, int action, int mod
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GL_TRUE);
     }
-    // "W" Key toggles between solid and wireframe polygon mode.
+    // "Q" Key toggles between solid and wireframe polygon mode.
     if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
         // This tripped me up for a second --- fetching GL_POLYGON_MODE returns
         // two integers, one for the front and one for the back of polygons.
@@ -675,13 +716,10 @@ void keyCallback(GLFWwindow* window, int key, int scandcode, int action, int mod
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
     }
-    if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
-        mixConstant += 0.08;
-        mixConstant = clip(mixConstant, 0.0, 1.0);
-    }
-    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
-        mixConstant -= 0.08;
-        mixConstant = clip(mixConstant, 0.0, 1.0);
+    // "E" Key toggles between the 3D scene and a visualiztion of the scene's
+    // shadow map.
+    if (key == GLFW_KEY_E && action == GLFW_PRESS) {
+        visualizeDepth ^= true;
     }
 }
 

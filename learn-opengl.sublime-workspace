@@ -24,102 +24,26 @@
 	"buffers":
 	[
 		{
-			"file": "main.cpp",
+			"contents": "",
 			"settings":
 			{
-				"buffer_size": 19343,
+				"buffer_size": 0,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "IMAGE-LICENSE.md",
+			"file": "shaders/blinn.frag",
 			"settings":
 			{
-				"buffer_size": 17114,
-				"encoding": "UTF-8",
-				"line_ending": "Unix",
-				"name": "Creative Commons"
-			}
-		},
-		{
-			"file": "/home/nicwolf/CAMP-PLANS",
-			"settings":
-			{
-				"buffer_size": 662,
+				"buffer_size": 5769,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"contents": "Personal To-Do\n--------------\n\n* Check w/ Kody re: camping chair, tap\n\nOrder of Operations\n-------------------\n\nTuesday\n```````\n* Pack @ Home (After Work\n  X Tent\n  - Clothes\n  - Dining Supplies\n  X Hammock\n  X Zip Ties\n  - Blankets/Local Fluff\n* Clean Home\n* Clean Keg Bucket\n* Natty Grocer\n  - Snacks\n\n\nWednesday\n`````````\n* Rec Center (Morning)\nX Pickup car (Lunch)\nX Talk Breakfast w/ Hunter (Lunch)\nX Home Depot (Lunch)\n  - Rebar\nX REI (Lunch)\n  - Water jug lid\n  - Rain coat?\n  - Hammock Straps\n  - Rings (4)\nX Costco (Lunch)\n  - Fill Moose Script\nX Keg Tap (Total Wine)\n* Safeway\n  - Ice\n  - Dry Ice\n  - Water",
-			"file": "/home/nicwolf/Personal To-Do",
-			"file_size": 586,
-			"file_write_time": 131376151168916645,
+			"contents": "",
 			"settings":
 			{
-				"buffer_size": 616,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"contents": "* Surface Reflectance\n  - RED\n  - BG\n  - IR\n* Surface Albedo\n  - RED\n  - BG\n  - IR\n\nBackground\n==========\n\n* Abstract being submitted soon\n* Shouldn't share before publication, but let's start thinking processing and storage\n  - Start with processing RED\n  - JP2 Conversion Things ***\n    + Review PDSJP2/Kakadu/GDAL relationship\n    + Store Dust Quantity (?)\n  - IDL in job scheduler?\n  - Database registration\n* GDAL w/ Kakadu, Conversion from Envi to JP2 (?) ***\n- How does PDS2JP2 Work? ***\n* Brittle software, brittle\n",
-			"settings":
-			{
-				"buffer_size": 523,
-				"line_ending": "Unix",
-				"name": "* Surface Reflectance"
-			}
-		},
-		{
-			"file": "model.cpp",
-			"settings":
-			{
-				"buffer_size": 5390,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "mesh.h",
-			"settings":
-			{
-				"buffer_size": 753,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "shaders/instancing.frag",
-			"settings":
-			{
-				"buffer_size": 673,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"contents": "#include <glm/glm.hpp>\n\n#include \"mesh.h\"\n\nclass Box : public Mesh {\npublic:\n    Box(glm::vec3 size, std::vector<Texture> textures);\n}",
-			"file": "cube.h",
-			"file_size": 134,
-			"file_write_time": 131376207125590737,
-			"settings":
-			{
-				"buffer_size": 134,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "mesh.cpp",
-			"settings":
-			{
-				"buffer_size": 3585,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"contents": "#include \"cube.h\"\n\nCube::Cube(std::vector<Texture> textures)\n{\n    this->vertices = {\n        { {-0.5f, -0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f}, {0.0f,  0.0f} }, //  0\n        { { 0.5f,  0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f}, {1.0f,  1.0f} }, //  1\n        { { 0.5f, -0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f}, {1.0f,  0.0f} }, //  2\n        { {-0.5f,  0.5f, -0.5f}, { 0.0f,  0.0f, -1.0f}, {0.0f,  1.0f} }, //  3\n\n        { {-0.5f, -0.5f,  0.5f}, { 0.0f,  0.0f,  1.0f}, {0.0f,  0.0f} }, //  4\n        { { 0.5f, -0.5f,  0.5f}, { 0.0f,  0.0f,  1.0f}, {1.0f,  0.0f} }, //  5\n        { { 0.5f,  0.5f,  0.5f}, { 0.0f,  0.0f,  1.0f}, {1.0f,  1.0f} }, //  6\n        { {-0.5f,  0.5f,  0.5f}, { 0.0f,  0.0f,  1.0f}, {0.0f,  1.0f} }, //  7\n\n        { {-0.5f,  0.5f,  0.5f}, {-1.0f,  0.0f,  0.0f}, {1.0f,  0.0f} }, //  8\n        { {-0.5f,  0.5f, -0.5f}, {-1.0f,  0.0f,  0.0f}, {1.0f,  1.0f} }, //  9\n        { {-0.5f, -0.5f, -0.5f}, {-1.0f,  0.0f,  0.0f}, {0.0f,  1.0f} }, // 10\n        { {-0.5f, -0.5f,  0.5f}, {-1.0f,  0.0f,  0.0f}, {0.0f,  0.0f} }, // 11\n\n        { { 0.5f,  0.5f,  0.5f}, { 1.0f,  0.0f,  0.0f}, {1.0f,  0.0f} }, // 12\n        { { 0.5f,  0.5f, -0.5f}, { 1.0f,  0.0f,  0.0f}, {1.0f,  1.0f} }, // 13\n        { { 0.5f, -0.5f, -0.5f}, { 1.0f,  0.0f,  0.0f}, {0.0f,  1.0f} }, // 14\n        { { 0.5f, -0.5f,  0.5f}, { 1.0f,  0.0f,  0.0f}, {0.0f,  0.0f} }, // 15\n\n        { {-0.5f, -0.5f, -0.5f}, { 0.0f, -1.0f,  0.0f}, {0.0f,  1.0f} }, // 16\n        { { 0.5f, -0.5f, -0.5f}, { 0.0f, -1.0f,  0.0f}, {1.0f,  1.0f} }, // 17\n        { { 0.5f, -0.5f,  0.5f}, { 0.0f, -1.0f,  0.0f}, {1.0f,  0.0f} }, // 18 \n        { {-0.5f, -0.5f,  0.5f}, { 0.0f, -1.0f,  0.0f}, {0.0f,  0.0f} }, // 19\n\n        { {-0.5f,  0.5f, -0.5f}, { 0.0f,  1.0f,  0.0f}, {0.0f,  1.0f} }, // 20\n        { { 0.5f,  0.5f, -0.5f}, { 0.0f,  1.0f,  0.0f}, {1.0f,  1.0f} }, // 21\n        { { 0.5f,  0.5f,  0.5f}, { 0.0f,  1.0f,  0.0f}, {1.0f,  0.0f} }, // 22\n        { {-0.5f,  0.5f,  0.5f}, { 0.0f,  1.0f,  0.0f}, {0.0f,  0.0f} }, // 23\n    };\n    this->indices = {\n         0,  1,  3,\n         3,  1,  2,\n         4,  5,  6,\n         6,  7,  4,\n         8,  9, 10,\n        10, 11,  8,\n        12, 14, 13,\n        12, 15, 14,\n        16, 17, 18,\n        18, 19, 16,\n        20, 22, 21,\n        20, 23, 22\n    };\n    this->setupMesh();\n}",
-			"file": "cube.cpp",
-			"file_size": 2287,
-			"file_write_time": 131376206997527145,
-			"settings":
-			{
-				"buffer_size": 2287,
+				"buffer_size": 0,
 				"line_ending": "Unix"
 			}
 		}
@@ -147,10 +71,14 @@
 	"build_varint": "",
 	"command_palette":
 	{
-		"height": 92.0,
-		"last_filter": "dislin",
+		"height": 112.0,
+		"last_filter": "install",
 		"selected_items":
 		[
+			[
+				"install",
+				"Package Control: Install Package"
+			],
 			[
 				"dislin",
 				"Anaconda: Disable linting on this file"
@@ -162,10 +90,6 @@
 			[
 				"enlin",
 				"Anaconda: Enable linting on this file"
-			],
-			[
-				"install",
-				"Package Control: Install Package"
 			],
 			[
 				"en",
@@ -208,7 +132,7 @@
 				"View: Toggle Menu"
 			]
 		],
-		"width": 449.0
+		"width": 485.0
 	},
 	"console":
 	{
@@ -235,12 +159,24 @@
 	],
 	"file_history":
 	[
+		"/home/nicwolf/learn-opengl/shaders/screen.vert",
+		"/home/nicwolf/learn-opengl/shaders/screen.frag",
+		"/home/nicwolf/learn-opengl/cube.cpp",
+		"/home/nicwolf/learn-opengl/mesh.cpp",
+		"/home/nicwolf/learn-opengl/cube.h",
+		"/home/nicwolf/learn-opengl/shaders/instancing.frag",
+		"/home/nicwolf/learn-opengl/mesh.h",
+		"/home/nicwolf/learn-opengl/model.cpp",
+		"/home/nicwolf/Personal To-Do",
+		"/home/nicwolf/CAMP-PLANS",
+		"/home/nicwolf/learn-opengl/shaders/phong-blinn.frag",
+		"/home/nicwolf/learn-opengl/IMAGE-LICENSE.md",
+		"/home/nicwolf/learn-opengl/shaders/depth.frag",
+		"/home/nicwolf/learn-opengl/shaders/depth.vert",
+		"/home/nicwolf/learn-opengl/main.cpp",
 		"/home/nicwolf/learn-opengl/shaders/instancing.vert",
 		"/home/nicwolf/learn-opengl/shaders/instanced.vert",
-		"/home/nicwolf/Personal To-Do",
 		"/home/nicwolf/PIRL/HiOps/2017-02-13.md",
-		"/home/nicwolf/learn-opengl/main.cpp",
-		"/home/nicwolf/CAMP-PLANS",
 		"/home/nicwolf/PIRL/Pegasus/CaSSIS/bin/mosaic",
 		"/home/nicwolf/PIRL/Pegasus/CaSSIS/tc.txt",
 		"/home/nicwolf/PIRL/Pegasus/CaSSIS/daxgen.py",
@@ -279,6 +215,20 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"glm::vec3( 0.0f,  0.5f,  0.0f)",
+			".ambient",
+			"floorDiffuse",
+			"diffuse",
+			"// Specular",
+			"    // Specular",
+			" // Specular",
+			"Specular",
+			"    // Specular",
+			"// Specular",
+			"Specular",
+			"// Specular",
+			"/ Specular",
+			"// Specular",
 			"Lights",
 			"lights",
 			"Lights",
@@ -399,72 +349,10 @@
 			[
 				{
 					"buffer": 0,
-					"file": "main.cpp",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 19343,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								11845,
-								11845
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/C++/C++.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 3530.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "IMAGE-LICENSE.md",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 17114,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								2678,
-								2678
-							]
-						],
-						"settings":
-						{
-							"auto_name": "Creative Commons",
-							"syntax": "Packages/Markdown/Markdown.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 0,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "/home/nicwolf/CAMP-PLANS",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 662,
+						"buffer_size": 0,
 						"regions":
 						{
 						},
@@ -477,62 +365,7 @@
 						],
 						"settings":
 						{
-							"syntax": "Packages/Text/Plain text.tmLanguage"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 4,
-					"type": "text"
-				},
-				{
-					"buffer": 3,
-					"file": "/home/nicwolf/Personal To-Do",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 616,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								370,
-								370
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Text/Plain text.tmLanguage"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 3,
-					"type": "text"
-				},
-				{
-					"buffer": 4,
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 523,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								385,
-								385
-							]
-						],
-						"settings":
-						{
-							"auto_name": "* Surface Reflectance",
+							"auto_name": "",
 							"syntax": "Packages/Text/Plain text.tmLanguage"
 						},
 						"translation.x": 0.0,
@@ -543,12 +376,12 @@
 					"type": "text"
 				},
 				{
-					"buffer": 5,
-					"file": "model.cpp",
-					"semi_transient": false,
+					"buffer": 1,
+					"file": "shaders/blinn.frag",
+					"semi_transient": true,
 					"settings":
 					{
-						"buffer_size": 5390,
+						"buffer_size": 5769,
 						"regions":
 						{
 						},
@@ -557,66 +390,6 @@
 							[
 								0,
 								0
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/C++/C++.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 1386.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 7,
-					"type": "text"
-				},
-				{
-					"buffer": 6,
-					"file": "mesh.h",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 753,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								598,
-								598
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/C++/C++.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 84.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 8,
-					"type": "text"
-				},
-				{
-					"buffer": 7,
-					"file": "shaders/instancing.frag",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 673,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								341,
-								341
 							]
 						],
 						"settings":
@@ -629,44 +402,21 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 10,
+					"stack_index": 1,
 					"type": "text"
-				},
+				}
+			]
+		},
+		{
+			"selected": 0,
+			"sheets":
+			[
 				{
-					"buffer": 8,
-					"file": "cube.h",
+					"buffer": 2,
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 134,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								134,
-								134
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/C++/C++.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 5,
-					"type": "text"
-				},
-				{
-					"buffer": 9,
-					"file": "mesh.cpp",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 3585,
+						"buffer_size": 0,
 						"regions":
 						{
 						},
@@ -679,43 +429,14 @@
 						],
 						"settings":
 						{
-							"syntax": "Packages/C++/C++.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
+							"auto_name": "",
+							"syntax": "Packages/Text/Plain text.tmLanguage"
 						},
 						"translation.x": 0.0,
-						"translation.y": 672.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 9,
-					"type": "text"
-				},
-				{
-					"buffer": 10,
-					"file": "cube.cpp",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 2287,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								2262,
-								2262
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/C++/C++.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 378.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 6,
+					"stack_index": 0,
 					"type": "text"
 				}
 			]
@@ -738,11 +459,18 @@
 				0,
 				1,
 				1
+			],
+			[
+				1,
+				0,
+				2,
+				1
 			]
 		],
 		"cols":
 		[
 			0.0,
+			0.5,
 			1.0
 		],
 		"rows":
@@ -802,7 +530,7 @@
 		],
 		"width": 0.0
 	},
-	"selected_group": 0,
+	"selected_group": 1,
 	"settings":
 	{
 	},
