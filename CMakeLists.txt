@@ -10,6 +10,9 @@ add_executable(${PROJECT_NAME}
     shaders/constant.frag
     shaders/depth.vert
     shaders/depth.frag
+    shaders/omnidir-depth.vert
+    shaders/omnidir-depth.geom
+    shaders/omnidir-depth.frag
     shaders/post.vert
     shaders/post.frag
     shaders/post-depth.frag

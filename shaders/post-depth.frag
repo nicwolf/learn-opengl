@@ -6,7 +6,7 @@ in VS_OUT
     vec2 uv;
 } fs_in;
 
-uniform sampler2D depthMap;
+uniform samplerCube depthMap;
 uniform float far;
 uniform float near;
 
@@ -15,8 +15,9 @@ float linearizeDepth(float depth);
 out vec4 fragColor;
 
 void main() {
-    fragColor = vec4(vec3(texture(depthMap, fs_in.uv).r), 1.0);
-//    fragColor = vec4(vec3(linearizeDepth(depth) / far), 1.0);
+//    fragColor = vec4(vec3(texture(depthMap, fs_in.uv).r), 1.0);
+    float depth = texture(depthMap, vec3(fs_in.uv, 0.0)).r;
+    fragColor = vec4(vec3(linearizeDepth(depth)), 1.0);
 //    fragColor = texture(depthMap, fs_in.uv);
 }
 

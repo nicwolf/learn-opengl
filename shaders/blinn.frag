@@ -3,7 +3,7 @@
 in VS_OUT
 {
     vec3 position;
-    vec4 positionLightSpace;
+    vec3 positionWorld;
     vec3 normal;
     vec2 uv;
 } fs_in;
@@ -63,7 +63,11 @@ struct Material {
 };
 uniform Material material;
 
-uniform sampler2D depthMap;
+uniform mat4 viewMatrixInverse;
+
+uniform samplerCube depthMap;
+uniform float nearDepth;
+uniform float farDepth;
 const float MIN_SHADOW_BIAS = 0.000;
 const float MAX_SHADOW_BIAS = 0.003;
 float calcShadow();
@@ -74,32 +78,42 @@ void main() {
     vec3 viewDir = normalize(-fs_in.position);
     vec3 normal  = normalize(fs_in.normal);
     vec3 result = vec3(0.0);
-    result += calcDirLight(dirLight, normal, viewDir);
+//    result += calcDirLight(dirLight, normal, viewDir);
     for (int i = 0; i < 4; i++) {
-//        result += calcPointLight(pointLights[i], normal, viewDir);
+        result += calcPointLight(pointLights[i], normal, viewDir);
     }
 //    result += calcConeLight(coneLight, normal, viewDir);
-    result -= calcShadow();
+    result *= calcShadow();
     fragColor = vec4(result, 1.0);
 }
 
 float calcShadow() {
-    vec3 lightDir = normalize(-dirLight.direction);
-    vec3 normal   = normalize(fs_in.normal);
-    vec3 p = fs_in.positionLightSpace.xyz / fs_in.positionLightSpace.w;
-    p *= 0.5f;
-    p += 0.5f;
-    if (p.z >= 1.0) {
-        return 0.0f;
+    vec3 lightPos = vec3(viewMatrixInverse * vec4(pointLights[0].position, 1.0));
+    vec3 fragPos  = fs_in.positionWorld;
+    vec3 fragToLight = fragPos - lightPos;
+
+    float shadow = 0.0;
+    float bias = 0.02;
+    int samples = 20;
+    float offset = 0.1;
+    float fragmentDepth = length(fragToLight);
+    float diskRadius = (1.0 + (length(fragPos) / farDepth)) / 25.0;
+    vec3 sampleOffsetDirections[20] = vec3[]
+    (
+       vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1),
+       vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
+       vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
+       vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
+       vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
+    );
+    for (int i = 0; i < samples; ++i) {
+        float closestDepth = texture(depthMap, normalize(fragToLight + sampleOffsetDirections[i] * diskRadius)).r;
+        // Map depth from [0, 1] to [nearDepth, farDepth].
+        closestDepth *= (farDepth - nearDepth);
+        closestDepth += (nearDepth);
+        shadow += fragmentDepth - bias < closestDepth ? 1.0 : 0.1;
     }
-    float closestDepth  = texture(depthMap, p.xy).r;
-    float fragmentDepth = p.z;
-    float shadow;
-    float bias = max(MAX_SHADOW_BIAS * (1 - dot(normal, lightDir)), MIN_SHADOW_BIAS);
-    if (fragmentDepth - bias < closestDepth) {
-        return 0.0f;
-    }
-    return 1.0f;
+    return shadow / float(samples);
 }
 
 vec3 calcDirLight(DirectionalLight light, vec3 normal, vec3 viewDir) {
