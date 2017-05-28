@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
     GLuint floorNormalMap;
     glGenTextures(1, & floorNormalMap);
     glBindTexture(GL_TEXTURE_2D, floorNormalMap);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
                  floorNormalMapImgWidth, floorNormalMapImgHeight,
                  0, GL_RGB, GL_UNSIGNED_BYTE, floorNormalMapImg);
     glGenerateMipmap(GL_TEXTURE_2D);
@@ -296,10 +296,10 @@ int main(int argc, char *argv[])
     GLuint numPointLightInstances = 4;
     glm::mat4 pointLightInstanceModelMatrices[numPointLightInstances];
     glm::vec3 pointLightInstancePositions[] = {
-        glm::vec3( 0.0f,  0.0f,  3.0f),
-        glm::vec3( 0.0f,  0.0f,  3.0f),
-        glm::vec3( 0.0f,  0.0f,  3.0f),
-        glm::vec3( 0.0f,  0.0f,  3.0f)
+        glm::vec3( 0.0f,  1.0f,  0.0f),
+        glm::vec3( 0.0f,  1.0f,  0.0f),
+        glm::vec3( 0.0f,  1.0f,  0.0f),
+        glm::vec3( 0.0f,  1.0f,  0.0f)
     };
     for (GLuint i = 0; i < numPointLightInstances; i++) {
         glm::mat4 modelMatrix = glm::mat4();
@@ -425,16 +425,16 @@ int main(int argc, char *argv[])
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        pointLightInstancePositions[0].y = sin(glfwGetTime() * 0.25) * 2.0;
-        pointLightInstancePositions[1].y = sin(glfwGetTime() * 0.25) * 2.0;
-        pointLightInstancePositions[2].y = sin(glfwGetTime() * 0.25) * 2.0;
-        pointLightInstancePositions[3].y = sin(glfwGetTime() * 0.25) * 2.0;
-        for (GLuint i = 0; i < numPointLightInstances; i++) {
-            glm::mat4 modelMatrix = glm::mat4();
-            modelMatrix = glm::translate(modelMatrix, pointLightInstancePositions[i]);
-            modelMatrix = glm::scale(modelMatrix, glm::vec3(0.1f));
-            pointLightInstanceModelMatrices[i] = modelMatrix;
-        }
+//        pointLightInstancePositions[0].y = sin(glfwGetTime() * 0.25) * 2.0;
+//        pointLightInstancePositions[1].y = sin(glfwGetTime() * 0.25) * 2.0;
+//        pointLightInstancePositions[2].y = sin(glfwGetTime() * 0.25) * 2.0;
+//        pointLightInstancePositions[3].y = sin(glfwGetTime() * 0.25) * 2.0;
+//        for (GLuint i = 0; i < numPointLightInstances; i++) {
+//            glm::mat4 modelMatrix = glm::mat4();
+//            modelMatrix = glm::translate(modelMatrix, pointLightInstancePositions[i]);
+//            modelMatrix = glm::scale(modelMatrix, glm::vec3(0.1f));
+//            pointLightInstanceModelMatrices[i] = modelMatrix;
+//        }
         GLuint lightInstanceBuffer;
         glGenBuffers(1, &lightInstanceBuffer);
         glBindVertexArray(light.VAO);
@@ -520,9 +520,9 @@ int main(int argc, char *argv[])
 
                 // Draw Plane
                 modelMatrix = glm::mat4();
-                modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.0f, -1.0f));
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, -1.0f, 0.0f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(5.0f));
-                modelMatrix = glm::rotate(modelMatrix, glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                modelMatrix = glm::rotate(modelMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
                 modelMatrixLocation = glGetUniformLocation(shaderDepthMap.Program, "modelMatrix");
                 glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
@@ -560,7 +560,7 @@ int main(int argc, char *argv[])
                 modelViewProjectionMatrixLocation = glGetUniformLocation(shaderDepthMap.Program, "modelViewProjectionMatrix");
                 glUniformMatrix4fv(modelViewProjectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
 
-                cube.Draw(shaderDepthMap);
+//                cube.Draw(shaderDepthMap);
 
         // Scene Pass
         // ----------
@@ -606,9 +606,9 @@ int main(int argc, char *argv[])
 
                 // Draw Plane
                 modelMatrix = glm::mat4();
-                modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.0f, -1.0f));
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, -1.0f, 0.0f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(5.0f));
-                modelMatrix = glm::rotate(modelMatrix, glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                modelMatrix = glm::rotate(modelMatrix, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
                 modelMatrixLocation = glGetUniformLocation(shaderPhongBase.Program, "modelMatrix");
                 glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
@@ -692,7 +692,7 @@ int main(int argc, char *argv[])
                 materialShininessLoc = glGetUniformLocation(shaderPhongBase.Program, "material.shininess");
                 glUniform1f(materialShininessLoc, 32.0f);
 
-                cube.Draw(shaderPhongBase);
+//                cube.Draw(shaderPhongBase);
 
             // Draw Lights
             shaderConstInst.Use();

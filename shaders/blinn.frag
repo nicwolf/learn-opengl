@@ -6,6 +6,7 @@ in VS_OUT
     vec3 positionWorld;
     vec3 normal;
     vec2 uv;
+    mat3 TBN;
 } fs_in;
 
 struct PointLight {
@@ -78,10 +79,11 @@ out vec4 fragColor;
 void main() {
     vec3 viewDir = normalize(-fs_in.position);
     vec3 normal = texture(material.normal, fs_in.uv).rgb;
-    normal -= 0.5;
-    normal /= 0.5;
+    normal *= 2.0;
+    normal -= 1.0;
     normal = normalize(normal);
-//    vec3 normal = normalize(fs_in.normal);
+    normal = normalize(fs_in.TBN * normal);
+//    normal = normalize(fs_in.normal);
     vec3 result = vec3(0.0);
 //    result += calcDirLight(dirLight, normal, viewDir);
     for (int i = 0; i < 4; i++) {
