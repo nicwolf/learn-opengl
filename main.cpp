@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
     // Floor Diffuse Map
     // -----------------
     int floorDiffuseMapImgWidth, floorDiffuseMapImgHeight;
-    const char* floorDiffuseMapImgPath = "../learn-opengl/assets/wall.jpg";
+    const char* floorDiffuseMapImgPath = "../learn-opengl/assets/brickwall.jpg";
     unsigned char* floorDiffuseMapImg = SOIL_load_image(floorDiffuseMapImgPath, &floorDiffuseMapImgWidth, &floorDiffuseMapImgHeight, 0, SOIL_LOAD_RGB);
     GLuint floorDiffuseMap;
     glGenTextures(1, & floorDiffuseMap);
@@ -123,6 +123,21 @@ int main(int argc, char *argv[])
                  100, 100,
                  0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glGenerateMipmap(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Floor Normal Map
+    // ----------------
+    int floorNormalMapImgWidth, floorNormalMapImgHeight;
+    const char* floorNormalMapImgPath = "../learn-opengl/assets/brickwall_normal.jpg";
+    unsigned char* floorNormalMapImg = SOIL_load_image(floorNormalMapImgPath, &floorNormalMapImgWidth, &floorNormalMapImgHeight, 0, SOIL_LOAD_RGB);
+    GLuint floorNormalMap;
+    glGenTextures(1, & floorNormalMap);
+    glBindTexture(GL_TEXTURE_2D, floorNormalMap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB,
+                 floorNormalMapImgWidth, floorNormalMapImgHeight,
+                 0, GL_RGB, GL_UNSIGNED_BYTE, floorNormalMapImg);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    SOIL_free_image_data(floorNormalMapImg);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Box Diffuse Map
@@ -624,8 +639,12 @@ int main(int argc, char *argv[])
                 glActiveTexture(GL_TEXTURE1);
                 glBindTexture(GL_TEXTURE_2D, floorSpecularMap);
 
-                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "depthMap"), 2);
+                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "material.normal"), 2);
                 glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, floorNormalMap);
+
+                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "depthMap"), 3);
+                glActiveTexture(GL_TEXTURE3);
                 glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
 
                 GLuint materialShininessLoc = glGetUniformLocation(shaderPhongBase.Program, "material.shininess");
@@ -666,8 +685,8 @@ int main(int argc, char *argv[])
                 glActiveTexture(GL_TEXTURE1);
                 glBindTexture(GL_TEXTURE_2D, specularMap);
 
-                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "depthMap"), 2);
-                glActiveTexture(GL_TEXTURE2);
+                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "depthMap"), 3);
+                glActiveTexture(GL_TEXTURE3);
                 glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
 
                 materialShininessLoc = glGetUniformLocation(shaderPhongBase.Program, "material.shininess");

@@ -59,6 +59,7 @@ struct Material {
     sampler2D diffuse;
     sampler2D specular;
     sampler2D emission;
+    sampler2D normal;
     float shininess;
 };
 uniform Material material;
@@ -76,7 +77,11 @@ out vec4 fragColor;
 
 void main() {
     vec3 viewDir = normalize(-fs_in.position);
-    vec3 normal  = normalize(fs_in.normal);
+    vec3 normal = texture(material.normal, fs_in.uv).rgb;
+    normal -= 0.5;
+    normal /= 0.5;
+    normal = normalize(normal);
+//    vec3 normal = normalize(fs_in.normal);
     vec3 result = vec3(0.0);
 //    result += calcDirLight(dirLight, normal, viewDir);
     for (int i = 0; i < 4; i++) {
@@ -106,14 +111,14 @@ float calcShadow() {
        vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
        vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
     );
-    for (int i = 0; i < samples; ++i) {
+    for (int i = 0; i < samples; i+=4) {
         float closestDepth = texture(depthMap, normalize(fragToLight + sampleOffsetDirections[i] * diskRadius)).r;
         // Map depth from [0, 1] to [nearDepth, farDepth].
         closestDepth *= (farDepth - nearDepth);
         closestDepth += (nearDepth);
         shadow += fragmentDepth - bias < closestDepth ? 1.0 : 0.1;
     }
-    return shadow / float(samples);
+    return shadow / float(samples/4);
 }
 
 vec3 calcDirLight(DirectionalLight light, vec3 normal, vec3 viewDir) {
@@ -201,7 +206,8 @@ vec3 calcPointLight(PointLight light, vec3 normal, vec3 viewDir) {
     specularStrength = dot(normal, halfwayDir);
     specularStrength = max(specularStrength, 0.0);
     specularStrength = pow(specularStrength, material.shininess);
-    vec3 specularMap = vec3(texture(material.specular, fs_in.uv));
+//    vec3 specularMap = vec3(texture(material.specular, fs_in.uv));
+    vec3 specularMap = vec3(0.2);
     vec3 specular = light.specular * specularStrength * specularMap;
 
     // Attenuation
