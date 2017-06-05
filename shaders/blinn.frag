@@ -105,7 +105,7 @@ void main() {
 vec2 parallaxMappingUV() {
     vec3 viewDirTangent = normalize(-fs_in.positionTangent);
     float height = texture(material.depth, fs_in.uv).r;
-    vec2 p = viewDirTangent.xy / viewDirTangent.z;
+    vec2 p = viewDirTangent.xy;
 //    vec2 p = vec2(height * 0.5);
     return fs_in.uv - p;
 //    return p;
