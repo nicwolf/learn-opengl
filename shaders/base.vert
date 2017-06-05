@@ -20,6 +20,7 @@ layout (std140) uniform Matrices
 out VS_OUT 
 {
     vec3 position;
+    vec3 positionTangent;
     vec3 positionWorld;
     vec3 normal;
     vec2 uv;
@@ -37,5 +38,5 @@ void main()
     vec3 B = normalize(vec3(modelViewMatrix * vec4(bitangent, 0.0)));
     vec3 N = normalize(vec3(modelViewMatrix * vec4(normal,    0.0)));
     vs_out.TBN = mat3(T, B, N);
-//    vs_out.TBN = mat3(tangent, bitangent, normal);
+    vs_out.positionTangent = transpose(vs_out.TBN) * vs_out.position;
 }

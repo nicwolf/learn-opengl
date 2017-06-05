@@ -3,6 +3,7 @@
 in VS_OUT
 {
     vec3 position;
+    vec3 positionTangent;
     vec3 positionWorld;
     vec3 normal;
     vec2 uv;
@@ -21,7 +22,7 @@ struct PointLight {
     float quadraticFalloff;
 };
 
-vec3 calcPointLight(PointLight light, vec3 normal, vec3 viewDir);
+vec3 calcPointLight(PointLight light, vec3 normal, vec3 viewDir, vec2 uv);
 
 struct DirectionalLight {
     vec3 direction;
@@ -61,6 +62,7 @@ struct Material {
     sampler2D specular;
     sampler2D emission;
     sampler2D normal;
+    sampler2D depth;
     float shininess;
 };
 uniform Material material;
@@ -74,11 +76,15 @@ const float MIN_SHADOW_BIAS = 0.000;
 const float MAX_SHADOW_BIAS = 0.003;
 float calcShadow();
 
+vec2 parallaxMappingUV();
+
 out vec4 fragColor;
 
 void main() {
     vec3 viewDir = normalize(-fs_in.position);
-    vec3 normal = texture(material.normal, fs_in.uv).rgb;
+    vec2 uv = parallaxMappingUV();
+//    uv = fs_in.uv;
+    vec3 normal = texture(material.normal, uv).rgb;
     normal *= 2.0;
     normal -= 1.0;
     normal = normalize(normal);
@@ -87,11 +93,22 @@ void main() {
     vec3 result = vec3(0.0);
 //    result += calcDirLight(dirLight, normal, viewDir);
     for (int i = 0; i < 4; i++) {
-        result += calcPointLight(pointLights[i], normal, viewDir);
+        result += calcPointLight(pointLights[i], normal, viewDir, uv);
     }
 //    result += calcConeLight(coneLight, normal, viewDir);
     result *= calcShadow();
     fragColor = vec4(result, 1.0);
+//    fragColor = vec4(uv.x, uv.y, 0.0, 1.0);
+//    fragColor = texture(material.depth, fs_in.uv);
+}
+
+vec2 parallaxMappingUV() {
+    vec3 viewDirTangent = normalize(-fs_in.positionTangent);
+    float height = texture(material.depth, fs_in.uv).r;
+    vec2 p = viewDirTangent.xy / viewDirTangent.z;
+//    vec2 p = vec2(height * 0.5);
+    return fs_in.uv - p;
+//    return p;
 }
 
 float calcShadow() {
@@ -189,15 +206,15 @@ vec3 calcConeLight(ConeLight light, vec3 normal, vec3 viewDir) {
     return result;
 }
 
-vec3 calcPointLight(PointLight light, vec3 normal, vec3 viewDir) {
+vec3 calcPointLight(PointLight light, vec3 normal, vec3 viewDir, vec2 uv) {
     vec3 lightDir = normalize(light.position - fs_in.position);
 
     // Ambient
-    vec3 ambient = light.ambient * vec3(texture(material.diffuse, fs_in.uv));
+    vec3 ambient = light.ambient * vec3(texture(material.diffuse, uv));
 
     // Diffuse
     float diffuseStrength;
-    vec3 diffuseMap = vec3(texture(material.diffuse, fs_in.uv));
+    vec3 diffuseMap = vec3(texture(material.diffuse, uv));
     diffuseStrength = dot(lightDir, normal);
     diffuseStrength = max(diffuseStrength, 0.0);
     vec3 diffuse = light.diffuse * diffuseStrength * diffuseMap;

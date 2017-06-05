@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
     // Floor Diffuse Map
     // -----------------
     int floorDiffuseMapImgWidth, floorDiffuseMapImgHeight;
-    const char* floorDiffuseMapImgPath = "../learn-opengl/assets/brickwall.jpg";
+    const char* floorDiffuseMapImgPath = "../learn-opengl/assets/bricks2.jpg";
     unsigned char* floorDiffuseMapImg = SOIL_load_image(floorDiffuseMapImgPath, &floorDiffuseMapImgWidth, &floorDiffuseMapImgHeight, 0, SOIL_LOAD_RGB);
     GLuint floorDiffuseMap;
     glGenTextures(1, & floorDiffuseMap);
@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
     // Floor Normal Map
     // ----------------
     int floorNormalMapImgWidth, floorNormalMapImgHeight;
-    const char* floorNormalMapImgPath = "../learn-opengl/assets/brickwall_normal.jpg";
+    const char* floorNormalMapImgPath = "../learn-opengl/assets/bricks2_normal.jpg";
     unsigned char* floorNormalMapImg = SOIL_load_image(floorNormalMapImgPath, &floorNormalMapImgWidth, &floorNormalMapImgHeight, 0, SOIL_LOAD_RGB);
     GLuint floorNormalMap;
     glGenTextures(1, & floorNormalMap);
@@ -138,6 +138,21 @@ int main(int argc, char *argv[])
                  0, GL_RGB, GL_UNSIGNED_BYTE, floorNormalMapImg);
     glGenerateMipmap(GL_TEXTURE_2D);
     SOIL_free_image_data(floorNormalMapImg);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // Floor Height Map
+    // ----------------
+    int floorHeightMapImgWidth, floorHeightMapImgHeight;
+    const char* floorHeightMapImgPath = "../learn-opengl/assets/bricks2_disp.jpg";
+    unsigned char* floorHeightMapImg = SOIL_load_image(floorHeightMapImgPath, &floorHeightMapImgWidth, &floorHeightMapImgHeight, 0, SOIL_LOAD_RGB);
+    GLuint floorHeightMap;
+    glGenTextures(1, & floorHeightMap);
+    glBindTexture(GL_TEXTURE_2D, floorHeightMap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+                 floorHeightMapImgWidth, floorHeightMapImgHeight,
+                 0, GL_RGB, GL_UNSIGNED_BYTE, floorHeightMapImg);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    SOIL_free_image_data(floorHeightMapImg);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // Box Diffuse Map
@@ -643,8 +658,12 @@ int main(int argc, char *argv[])
                 glActiveTexture(GL_TEXTURE2);
                 glBindTexture(GL_TEXTURE_2D, floorNormalMap);
 
-                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "depthMap"), 3);
+                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "material.depth"), 3);
                 glActiveTexture(GL_TEXTURE3);
+                glBindTexture(GL_TEXTURE_2D, floorHeightMap);
+
+                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "depthMap"), 4);
+                glActiveTexture(GL_TEXTURE4);
                 glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
 
                 GLuint materialShininessLoc = glGetUniformLocation(shaderPhongBase.Program, "material.shininess");
@@ -685,8 +704,8 @@ int main(int argc, char *argv[])
                 glActiveTexture(GL_TEXTURE1);
                 glBindTexture(GL_TEXTURE_2D, specularMap);
 
-                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "depthMap"), 3);
-                glActiveTexture(GL_TEXTURE3);
+                glUniform1i(glGetUniformLocation(shaderPhongBase.Program, "depthMap"), 4);
+                glActiveTexture(GL_TEXTURE4);
                 glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
 
                 materialShininessLoc = glGetUniformLocation(shaderPhongBase.Program, "material.shininess");
