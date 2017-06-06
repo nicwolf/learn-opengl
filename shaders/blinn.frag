@@ -83,13 +83,12 @@ out vec4 fragColor;
 void main() {
     vec3 viewDir = normalize(-fs_in.position);
     vec2 uv = parallaxMappingUV();
-//    uv = fs_in.uv;
+    if (uv.x > 1.0 || uv.x < 0.0 || uv.y > 1.0 || uv.y < 0.0) discard;
     vec3 normal = texture(material.normal, uv).rgb;
     normal *= 2.0;
     normal -= 1.0;
     normal = normalize(normal);
     normal = normalize(fs_in.TBN * normal);
-//    normal = normalize(fs_in.normal);
     vec3 result = vec3(0.0);
 //    result += calcDirLight(dirLight, normal, viewDir);
     for (int i = 0; i < 4; i++) {
@@ -98,17 +97,30 @@ void main() {
 //    result += calcConeLight(coneLight, normal, viewDir);
     result *= calcShadow();
     fragColor = vec4(result, 1.0);
-//    fragColor = vec4(uv.x, uv.y, 0.0, 1.0);
-//    fragColor = texture(material.depth, fs_in.uv);
+//    fragColor = vec4(uv, 0.0, 1.0);
 }
 
 vec2 parallaxMappingUV() {
     vec3 viewDirTangent = normalize(-fs_in.positionTangent);
-    float height = texture(material.depth, fs_in.uv).r;
-    vec2 p = viewDirTangent.xy;
-//    vec2 p = vec2(height * 0.5);
-    return fs_in.uv - p;
-//    return p;
+
+    float numLayers = 10;
+    float layerDepth = 1.0 / numLayers;
+    float currentLayerDepth = 0.0;
+
+    float heightScale = 0.1;
+    vec2 p = viewDirTangent.xy * heightScale;
+    vec2 deltaUV = p / numLayers;
+
+    vec2  currentUV = fs_in.uv;
+    float currentDepth = texture(material.depth, currentUV).r;
+
+    while (currentLayerDepth < currentDepth) {
+        currentUV -= deltaUV;
+        currentDepth = texture(material.depth, currentUV).r;
+        currentLayerDepth += layerDepth;
+    }
+
+    return currentUV;
 }
 
 float calcShadow() {
