@@ -103,11 +103,13 @@ void main() {
 vec2 parallaxMappingUV() {
     vec3 viewDirTangent = normalize(-fs_in.positionTangent);
 
-    float numLayers = 10;
+    float minLayers =  8.0;
+    float maxLayers = 32.0;
+    float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0), viewDirTangent)));
     float layerDepth = 1.0 / numLayers;
     float currentLayerDepth = 0.0;
 
-    float heightScale = 0.1;
+    float heightScale = 0.2;
     vec2 p = viewDirTangent.xy * heightScale;
     vec2 deltaUV = p / numLayers;
 
@@ -120,7 +122,15 @@ vec2 parallaxMappingUV() {
         currentLayerDepth += layerDepth;
     }
 
-    return currentUV;
+    vec2 previousUV = currentUV + deltaUV;
+    float previousDepth = texture(material.depth, previousUV).r;
+    float previousLayerDepth = currentLayerDepth - layerDepth;
+
+    float after  = currentDepth - currentLayerDepth;
+    float before = previousDepth - previousLayerDepth;
+    float weight = after / (after - before);
+
+    return (previousUV * weight) + (currentUV * (1.0 - weight));
 }
 
 float calcShadow() {
