@@ -202,6 +202,8 @@ int main(int argc, char *argv[])
                         "../learn-opengl/shaders/post.frag");
     Shader shaderPostDepth("../learn-opengl/shaders/post.vert",
                            "../learn-opengl/shaders/post-depth.frag");
+    Shader shaderBlur("../learn-opengl/shaders/post.vert",
+                      "../learn-opengl/shaders/blur.frag");
 
     // Uniform Buffer Setup
     // ====================
@@ -281,7 +283,7 @@ int main(int argc, char *argv[])
     // Point Light #3
     // --------------
     lights.pointLights[3].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
-    lights.pointLights[3].diffuse  = glm::vec3(10.0f, 10.0f, 10.0f);
+    lights.pointLights[3].diffuse  = glm::vec3(6.0f, 6.0f, 6.0f);
     lights.pointLights[3].specular = glm::vec3(1.0f, 1.0f, 1.0f);
     lights.pointLights[3].constantFalloff  = 1.000f;
     lights.pointLights[3].linearFalloff    = 0.090f;
@@ -383,13 +385,18 @@ int main(int argc, char *argv[])
     glGenFramebuffers(1, &sceneFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
 
-    GLuint sceneColorBuffer;
-    glGenTextures(1, &sceneColorBuffer);
-    glBindTexture(GL_TEXTURE_2D, sceneColorBuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    GLuint sceneColorBuffers[2];
+    glGenTextures(2, sceneColorBuffers);
+    for (unsigned int i = 0; i < 2; ++i) {
+        glBindTexture(GL_TEXTURE_2D, sceneColorBuffers[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, sceneColorBuffers[i], 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 
     GLuint sceneRBO;
     glGenRenderbuffers(1, &sceneRBO);
@@ -397,13 +404,36 @@ int main(int argc, char *argv[])
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sceneColorBuffer, 0);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, sceneRBO);
+
+    unsigned int attachments[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+    glDrawBuffers(2, attachments);
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // Ping Pong FBO
+    // -------------
+    unsigned int pingpongFBO[2];
+    unsigned int pingpongBuffer[2];
+    glGenFramebuffers(2, pingpongFBO);
+    glGenTextures(2, pingpongBuffer);
+    for (unsigned int i = 0; i < 2; ++i) {
+        glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
+        glBindTexture(GL_TEXTURE_2D, pingpongBuffer[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpongBuffer[i], 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
 
     // Post Processing Setup
     // =====================
@@ -729,7 +759,7 @@ int main(int argc, char *argv[])
                 modelViewProjectionMatrixLocation = glGetUniformLocation(shaderConstInst.Program, "modelViewProjectionMatrix");
                 glUniformMatrix4fv(modelViewProjectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelViewProjectionMatrix));
 
-                light.DrawInstanced(shaderConstInst, 4);
+//                light.DrawInstanced(shaderConstInst, 4);
 
         // Visualize Depth
         // ---------------
@@ -752,6 +782,22 @@ int main(int argc, char *argv[])
             continue;
         }
 
+        // Blur Pass
+        // ---------
+        int horizontal = true, firstPass = true;
+        int numPasses = 10;
+        shaderBlur.Use();
+        glBindVertexArray(screenVAO);
+        for (int i=0; i<numPasses; ++i) {
+            glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, firstPass ? sceneColorBuffers[1] : pingpongBuffer[!horizontal]);
+            glUniform1i(glGetUniformLocation(shaderBlur.Program, "horizontal"), horizontal);
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+            horizontal = !horizontal;
+            if (firstPass) firstPass = false;
+        }
+
         // Post Pass
         // ---------
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -761,9 +807,16 @@ int main(int argc, char *argv[])
             glDisable(GL_DEPTH_TEST);
             shaderPost.Use();
                 glBindVertexArray(screenVAO);
+
+                glUniform1i(glGetUniformLocation(shaderPost.Program, "colorBuffer"), 0);
                 glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, sceneColorBuffer);
-                GLfloat exposure = abs(sin(glfwGetTime() * .1) * 5.0) + .1;
+                glBindTexture(GL_TEXTURE_2D, sceneColorBuffers[0]);
+
+                glUniform1i(glGetUniformLocation(shaderPost.Program, "bloomBuffer"), 1);
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, pingpongBuffer[1]);
+
+                GLfloat exposure = 2.0;
                 glUniform1f(glGetUniformLocation(shaderPost.Program, "exposure"), exposure);
                 glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
                 glBindVertexArray(0);

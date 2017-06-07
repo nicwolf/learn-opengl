@@ -1,5 +1,8 @@
 #version 330 core
 
+layout (location = 0) out vec4 fragColor;
+layout (location = 1) out vec4 brightColor;
+
 in VS_OUT
 {
     vec3 position;
@@ -78,8 +81,6 @@ float calcShadow();
 
 vec2 parallaxMappingUV();
 
-out vec4 fragColor;
-
 void main() {
     vec3 viewDir = normalize(-fs_in.position);
     vec2 uv = parallaxMappingUV();
@@ -98,6 +99,12 @@ void main() {
 //    result += calcConeLight(coneLight, normal, viewDir);
     result *= calcShadow();
     fragColor = vec4(result, 1.0);
+    float brightness = dot(fragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+    if (brightness >= 1.0) {
+        brightColor = fragColor;
+    } else {
+        brightColor = vec4(0.0);
+    }
 //    fragColor = vec4(uv, 0.0, 1.0);
 }
 
@@ -110,7 +117,7 @@ vec2 parallaxMappingUV() {
     float layerDepth = 1.0 / numLayers;
     float currentLayerDepth = 0.0;
 
-    float heightScale = 0.05;
+    float heightScale = 0.1;
     vec2 p = viewDirTangent.xy * heightScale;
     vec2 deltaUV = p / numLayers;
 
