@@ -253,27 +253,27 @@ int main(int argc, char *argv[])
 
     // Point Light #0
     // --------------
-    lights.pointLights[0].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
-    lights.pointLights[0].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
-    lights.pointLights[0].specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    lights.pointLights[0].ambient  = glm::vec3(0.1f, 0.0f, 0.1f);
+    lights.pointLights[0].diffuse  = glm::vec3(0.6f, 0.0f, 0.6f);
+    lights.pointLights[0].specular = glm::vec3(1.0f, 0.0f, 1.0f);
     lights.pointLights[0].constantFalloff  = 1.000f;
     lights.pointLights[0].linearFalloff    = 0.090f;
     lights.pointLights[0].quadraticFalloff = 0.032f;
 
     // Point Light #1
     // --------------
-    lights.pointLights[1].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
-    lights.pointLights[1].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
-    lights.pointLights[1].specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    lights.pointLights[1].ambient  = glm::vec3(0.0f, 0.1f, 0.1f);
+    lights.pointLights[1].diffuse  = glm::vec3(0.0f, 0.6f, 0.6f);
+    lights.pointLights[1].specular = glm::vec3(0.0f, 1.0f, 1.0f);
     lights.pointLights[1].constantFalloff  = 1.000f;
     lights.pointLights[1].linearFalloff    = 0.090f;
     lights.pointLights[1].quadraticFalloff = 0.032f;
 
     // Point Light #2
     // --------------
-    lights.pointLights[2].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
-    lights.pointLights[2].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
-    lights.pointLights[2].specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    lights.pointLights[2].ambient  = glm::vec3(0.1f, 0.1f, 0.0f);
+    lights.pointLights[2].diffuse  = glm::vec3(0.6f, 0.6f, 0.0f);
+    lights.pointLights[2].specular = glm::vec3(1.0f, 1.0f, 0.0f);
     lights.pointLights[2].constantFalloff  = 1.000f;
     lights.pointLights[2].linearFalloff    = 0.090f;
     lights.pointLights[2].quadraticFalloff = 0.032f;
@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
     // Point Light #3
     // --------------
     lights.pointLights[3].ambient  = glm::vec3(0.1f, 0.1f, 0.1f);
-    lights.pointLights[3].diffuse  = glm::vec3(0.6f, 0.6f, 0.6f);
+    lights.pointLights[3].diffuse  = glm::vec3(10.0f, 10.0f, 10.0f);
     lights.pointLights[3].specular = glm::vec3(1.0f, 1.0f, 1.0f);
     lights.pointLights[3].constantFalloff  = 1.000f;
     lights.pointLights[3].linearFalloff    = 0.090f;
@@ -311,10 +311,10 @@ int main(int argc, char *argv[])
     GLuint numPointLightInstances = 4;
     glm::mat4 pointLightInstanceModelMatrices[numPointLightInstances];
     glm::vec3 pointLightInstancePositions[] = {
-        glm::vec3( 0.0f,  1.0f,  0.0f),
-        glm::vec3( 0.0f,  1.0f,  0.0f),
-        glm::vec3( 0.0f,  1.0f,  0.0f),
-        glm::vec3( 0.0f,  1.0f,  0.0f)
+        glm::vec3( 1.0f, -0.5f,  0.0f),
+        glm::vec3( 0.0f, -0.5f,  0.0f),
+        glm::vec3( 0.0f, -0.5f, -1.0f),
+        glm::vec3(-1.0f, -0.5f,  1.0f)
     };
     for (GLuint i = 0; i < numPointLightInstances; i++) {
         glm::mat4 modelMatrix = glm::mat4();
@@ -386,7 +386,7 @@ int main(int argc, char *argv[])
     GLuint sceneColorBuffer;
     glGenTextures(1, &sceneColorBuffer);
     glBindTexture(GL_TEXTURE_2D, sceneColorBuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -763,6 +763,8 @@ int main(int argc, char *argv[])
                 glBindVertexArray(screenVAO);
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, sceneColorBuffer);
+                GLfloat exposure = abs(sin(glfwGetTime() * .1) * 5.0) + .1;
+                glUniform1f(glGetUniformLocation(shaderPost.Program, "exposure"), exposure);
                 glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
                 glBindVertexArray(0);
         glDisable(GL_FRAMEBUFFER_SRGB);

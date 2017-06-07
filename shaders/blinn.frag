@@ -83,6 +83,7 @@ out vec4 fragColor;
 void main() {
     vec3 viewDir = normalize(-fs_in.position);
     vec2 uv = parallaxMappingUV();
+//    uv = fs_in.uv;
     if (uv.x > 1.0 || uv.x < 0.0 || uv.y > 1.0 || uv.y < 0.0) discard;
     vec3 normal = texture(material.normal, uv).rgb;
     normal *= 2.0;
@@ -109,7 +110,7 @@ vec2 parallaxMappingUV() {
     float layerDepth = 1.0 / numLayers;
     float currentLayerDepth = 0.0;
 
-    float heightScale = 0.2;
+    float heightScale = 0.05;
     vec2 p = viewDirTangent.xy * heightScale;
     vec2 deltaUV = p / numLayers;
 
