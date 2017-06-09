@@ -3,14 +3,13 @@
 in VS_OUT
 {
     vec3 position;
-    vec4 positionLightSpace;
-    vec3 normal;
-    vec2 uv;
 } fs_in;
+
+uniform vec3 color;
 
 out vec4 fragColor;
 
 void main()
 {
-    fragColor = vec4(1.0);
+    fragColor = vec4(color, 1.0);
 }
