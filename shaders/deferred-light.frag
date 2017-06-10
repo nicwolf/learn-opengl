@@ -50,6 +50,7 @@ void main() {
 vec3 calcLight(Light light, vec3 fragPosition, vec3 fragNormal, vec3 fragAlbedo) {
     vec3 lightPosition = (viewMatrix * vec4(light.position, 1.0)).xyz;
     vec3 lightDir = normalize(lightPosition - fragPosition);
+    vec3 viewDir  = normalize(-fragPosition);
 
     // Ambient
     float ambientStrength = 0.1;
@@ -65,6 +66,15 @@ vec3 calcLight(Light light, vec3 fragPosition, vec3 fragNormal, vec3 fragAlbedo)
     diffuseStrength = max(diffuseStrength, 0.0);
     vec3 diffuse = light.color * diffuseStrength * fragAlbedo;
 
+    // Specular
+    vec3 halfwayDir = normalize(lightDir + viewDir);
+    float specularStrength;
+    specularStrength = dot(fragNormal, halfwayDir);
+    specularStrength = max(specularStrength, 0.0);
+    specularStrength = pow(specularStrength, 64.0);
+    vec3 specularMap = vec3(0.4);
+    vec3 specular = light.color * specularStrength * specularMap;
+
     // Attenuation
     float distance    = length(lightPosition - fragPosition);
     float attenuation = 1.0 / (light.constFalloff
@@ -72,7 +82,8 @@ vec3 calcLight(Light light, vec3 fragPosition, vec3 fragNormal, vec3 fragAlbedo)
                                + light.quadFalloff * pow(distance, 2.0));
     ambient  *= attenuation;
     diffuse  *= attenuation;
+    specular *= attenuation;
 
-    vec3 result = ambient + diffuse;
+    vec3 result = ambient + diffuse + specular;
     return result;
 }
