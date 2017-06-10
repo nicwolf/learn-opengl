@@ -30,6 +30,7 @@ void mouseCallback(GLFWwindow*, double xPos, double yPos);
 void scrollCallback(GLFWwindow* window, double xOff, double yOff);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
 float clip(float a, float min, float max);
+float lerp(float a, float b, float f);
 
 // *****
 // Input
@@ -47,6 +48,7 @@ GLuint WINDOW_WIDTH, WINDOW_HEIGHT;
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 bool visualizeDepth = false;
+bool visualizeTexture = true;
 
 // ****
 // Main
@@ -98,9 +100,9 @@ int main(int argc, char *argv[])
     std::vector<glm::mat4> cubeModelMatrices;
     const unsigned int NR_CUBES = 40;
     for (unsigned int i=0; i<NR_CUBES; ++i) {
-        float px = ((rand() % 100) / 100.0) * 6.0 - 3.0;
-        float py = ((rand() % 100) / 100.0) * 6.0 - 3.0;
-        float pz = ((rand() % 100) / 100.0) * 6.0 - 3.0;
+        float px = ((rand() % 100) / 100.0) * 4.0 - 2.0;
+        float py = ((rand() % 100) / 100.0) * 4.0 - 2.0;
+        float pz = ((rand() % 100) / 100.0) * 4.0 - 2.0;
         float rx = ((rand() % 100) / 100.0);
         float ry = ((rand() % 100) / 100.0);
         float rz = ((rand() % 100) / 100.0);
@@ -182,6 +184,10 @@ int main(int argc, char *argv[])
                                "../learn-opengl/shaders/deferred-light.frag");
     Shader shaderForwardConst("../learn-opengl/shaders/base.vert",
                               "../learn-opengl/shaders/constant.frag");
+    Shader shaderSSAO("../learn-opengl/shaders/screen.vert",
+                      "../learn-opengl/shaders/ssao.frag");
+    Shader shaderImage("../learn-opengl/shaders/screen.vert",
+                       "../learn-opengl/shaders/image.frag");
 
     // Uniform Buffer Setup
     // ====================
@@ -255,6 +261,66 @@ int main(int argc, char *argv[])
         cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // SSAO Setup
+    // ==========
+
+    // Buffer Creation
+    // ---------------
+    GLuint ssaoFBO;
+    glGenFramebuffers(1, &ssaoFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
+
+    GLuint ssaoColorBuffer;
+    glGenTextures(1, &ssaoColorBuffer);
+    glBindTexture(GL_TEXTURE_2D, ssaoColorBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoColorBuffer, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // Sampling Kernel
+    // ---------------
+    std::uniform_real_distribution<float> randomFloats(0.0, 1.0);
+    std::default_random_engine generator;
+    std::vector<glm::vec3> ssaoKernel;
+    for (unsigned int i=0; i<64; ++i) {
+        glm::vec3 sample(randomFloats(generator) * 2.0 - 1.0,
+                         randomFloats(generator) * 2.0 - 1.0,
+                         randomFloats(generator));
+        sample  = glm::normalize(sample);
+        sample *= randomFloats(generator);
+        float scale = (float)i/64.0;
+        scale   = lerp(0.1, 1.0, scale * scale);
+        sample *= scale;
+        ssaoKernel.push_back(sample);
+    }
+
+    // Sampling Noise
+    // --------------
+    std::vector<glm::vec3> ssaoNoise;
+    for (unsigned int i=0; i<16; ++i) {
+        glm::vec3 noise(randomFloats(generator) * 2.0 - 1.0,
+                        randomFloats(generator) * 2.0 - 1.0,
+                        0.0);
+        ssaoNoise.push_back(noise);
+    }
+    GLuint ssaoNoiseTexture;
+    glGenTextures(1, &ssaoNoiseTexture);
+    glBindTexture(GL_TEXTURE_2D, ssaoNoiseTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssaoNoise[0]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
 
     // Post Processing Setup
     // =====================
@@ -338,7 +404,7 @@ int main(int argc, char *argv[])
         // Draw
         glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, geometryBuffer);
-            glClearColor(0.1f, 0.2f, 0.2f, 1.0f);
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glEnable(GL_DEPTH_TEST);
 
@@ -390,6 +456,31 @@ int main(int argc, char *argv[])
 
                     cube.Draw(shaderDeferredGeom);
                 }
+
+        // SSAO Pass
+        // ---------
+        // Let's start by just making sure that all the geometry is being passed to
+        // the SSAO shader properly.
+        glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        shaderSSAO.Use();
+            glBindVertexArray(screenVAO);
+            glUniform1i(glGetUniformLocation(shaderSSAO.Program, "gPosition"), 0);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, geometryPositionBuffer);
+
+            glUniform1i(glGetUniformLocation(shaderSSAO.Program, "gNormal"), 1);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, geometryNormalBuffer);
+
+            glUniform1i(glGetUniformLocation(shaderSSAO.Program, "gAlbedoSpecular"), 2);
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, geometryAlbedoSpecularBuffer);
+
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+            glBindVertexArray(0);
+
 
         // Lighting Pass
         // -------------
@@ -458,6 +549,20 @@ int main(int argc, char *argv[])
 
                 cube.Draw(shaderForwardConst);
             }
+
+        // Draw Texture
+        if (visualizeTexture) {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glDisable(GL_DEPTH_TEST);
+            glClear(GL_COLOR_BUFFER_BIT);
+            shaderImage.Use();
+                glBindVertexArray(screenVAO);
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, ssaoColorBuffer);
+                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+                glBindVertexArray(0);
+
+        }
 
         glfwSwapBuffers(window);
     }
@@ -545,4 +650,8 @@ void scrollCallback(GLFWwindow* window, double xOff, double yOff) {
 
 float clip(float a, float min, float max) {
     return a <= min ? min : a >= max ? max : a;
+}
+
+float lerp(float a, float b, float f) {
+    return a + f*(b - a);
 }
