@@ -48,7 +48,8 @@ GLuint WINDOW_WIDTH, WINDOW_HEIGHT;
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 bool visualizeDepth = false;
-bool visualizeTexture = true;
+bool visualizeTexture = false;
+bool ambientOcclusionOn = true;
 
 // ****
 // Main
@@ -186,6 +187,8 @@ int main(int argc, char *argv[])
                               "../learn-opengl/shaders/constant.frag");
     Shader shaderSSAO("../learn-opengl/shaders/screen.vert",
                       "../learn-opengl/shaders/ssao.frag");
+    Shader shaderSSAOBlur("../learn-opengl/shaders/screen.vert",
+                          "../learn-opengl/shaders/ssao-blur.frag");
     Shader shaderImage("../learn-opengl/shaders/screen.vert",
                        "../learn-opengl/shaders/image.frag");
 
@@ -285,12 +288,32 @@ int main(int argc, char *argv[])
         cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    // Blur Buffer Creation
+    // --------------------
+    GLuint ssaoBlurFBO;
+    glGenFramebuffers(1, &ssaoBlurFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFBO);
+
+    GLuint ssaoBlurColorBuffer;
+    glGenTextures(1, &ssaoBlurColorBuffer);
+    glBindTexture(GL_TEXTURE_2D, ssaoBlurColorBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoBlurColorBuffer, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
     // Sampling Kernel
     // ---------------
     std::uniform_real_distribution<float> randomFloats(0.0, 1.0);
     std::default_random_engine generator;
     std::vector<glm::vec3> ssaoKernel;
-    for (unsigned int i=0; i<64; ++i) {
+    for (unsigned int i=0; i<32; ++i) {
         glm::vec3 sample(randomFloats(generator) * 2.0 - 1.0,
                          randomFloats(generator) * 2.0 - 1.0,
                          randomFloats(generator));
@@ -365,6 +388,8 @@ int main(int argc, char *argv[])
     // Render Loop
     // ===========
     while(!glfwWindowShouldClose(window)) {
+
+        glEnable(GL_CULL_FACE);
 
         // Event Processing
         // ----------------
@@ -459,28 +484,41 @@ int main(int argc, char *argv[])
 
         // SSAO Pass
         // ---------
-        // Let's start by just making sure that all the geometry is being passed to
-        // the SSAO shader properly.
-        glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        shaderSSAO.Use();
-            glBindVertexArray(screenVAO);
-            glUniform1i(glGetUniformLocation(shaderSSAO.Program, "gPosition"), 0);
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, geometryPositionBuffer);
-
-            glUniform1i(glGetUniformLocation(shaderSSAO.Program, "gNormal"), 1);
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, geometryNormalBuffer);
-
-            glUniform1i(glGetUniformLocation(shaderSSAO.Program, "gAlbedoSpecular"), 2);
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, geometryAlbedoSpecularBuffer);
-
-            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-            glBindVertexArray(0);
-
+        if (ambientOcclusionOn) {
+            glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
+            shaderSSAO.Use();
+                for (unsigned int i = 0; i < 64; ++i) {
+                    GLuint kernelSampleLocation = glGetUniformLocation(shaderSSAO.Program, ("kernelSamples[" + std::to_string(i) + "]").c_str());
+                    glm::vec3 kernelSample = ssaoKernel[i];
+                    glUniform3f(kernelSampleLocation, kernelSample.x, kernelSample.y, kernelSample.z);
+                }
+                glBindVertexArray(screenVAO);
+                glUniform1i(glGetUniformLocation(shaderSSAO.Program, "gPosition"), 0);
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, geometryPositionBuffer);
+                glUniform1i(glGetUniformLocation(shaderSSAO.Program, "gNormal"), 1);
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, geometryNormalBuffer);
+                glUniform1i(glGetUniformLocation(shaderSSAO.Program, "gAlbedoSpecular"), 2);
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, geometryAlbedoSpecularBuffer);
+                glUniform1i(glGetUniformLocation(shaderSSAO.Program, "kernelRotationTexture"), 3);
+                glActiveTexture(GL_TEXTURE3);
+                glBindTexture(GL_TEXTURE_2D, ssaoNoiseTexture);
+                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+                glBindVertexArray(0);
+            glBindFramebuffer(GL_FRAMEBUFFER, ssaoBlurFBO);
+            glClear(GL_COLOR_BUFFER_BIT);
+            shaderSSAOBlur.Use();
+                glBindVertexArray(screenVAO);
+                glUniform1i(glGetUniformLocation(shaderSSAOBlur.Program, "image"), 0);
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, ssaoColorBuffer);
+                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+                glBindVertexArray(0);
+        }
 
         // Lighting Pass
         // -------------
@@ -502,6 +540,13 @@ int main(int argc, char *argv[])
             glUniform1i(glGetUniformLocation(shaderDeferredLight.Program, "gAlbedoSpecular"), 2);
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, geometryAlbedoSpecularBuffer);
+
+            glUniform1i(glGetUniformLocation(shaderDeferredLight.Program, "ssao"), 3);
+            glActiveTexture(GL_TEXTURE3);
+            glBindTexture(GL_TEXTURE_2D, ssaoBlurColorBuffer);
+
+            GLuint ambientOcclusionSwitchLocation = glGetUniformLocation(shaderDeferredLight.Program, "ambientOcclusionOn");
+            glUniform1f(ambientOcclusionSwitchLocation, ambientOcclusionOn);
 
             for (unsigned int i=0; i<NR_LIGHTS; ++i) {
                 GLuint lightPositionLocation = glGetUniformLocation(shaderDeferredLight.Program, ("lights[" + std::to_string(i) + "].position").c_str());
@@ -551,6 +596,7 @@ int main(int argc, char *argv[])
             }
 
         // Draw Texture
+        // ------------
         if (visualizeTexture) {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glDisable(GL_DEPTH_TEST);
@@ -558,7 +604,7 @@ int main(int argc, char *argv[])
             shaderImage.Use();
                 glBindVertexArray(screenVAO);
                 glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, ssaoColorBuffer);
+                glBindTexture(GL_TEXTURE_2D, ssaoBlurColorBuffer);
                 glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
                 glBindVertexArray(0);
 
@@ -623,6 +669,15 @@ void keyCallback(GLFWwindow* window, int key, int scandcode, int action, int mod
     // shadow map.
     if (key == GLFW_KEY_E && action == GLFW_PRESS) {
         visualizeDepth ^= true;
+    }
+    // "T" Key toggles between the 3D scene and a visualiztion of the scene's
+    // ssao map.
+    if (key == GLFW_KEY_T && action == GLFW_PRESS) {
+        visualizeTexture ^= true;
+    }
+    // "G" Key toggles SSAO on/off
+    if (key == GLFW_KEY_G && action == GLFW_PRESS) {
+        ambientOcclusionOn ^= true;
     }
 }
 

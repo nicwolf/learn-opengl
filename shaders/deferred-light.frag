@@ -27,6 +27,8 @@ uniform Light lights[NR_LIGHTS];
 uniform sampler2D gPosition;
 uniform sampler2D gNormal;
 uniform sampler2D gAlbedoSpecular;
+uniform sampler2D ssao;
+uniform bool ambientOcclusionOn;
 
 vec3 calcLight(Light light, vec3 fragPosition, vec3 fragNormal, vec3 fragAlbedo);
 
@@ -51,7 +53,11 @@ vec3 calcLight(Light light, vec3 fragPosition, vec3 fragNormal, vec3 fragAlbedo)
 
     // Ambient
     float ambientStrength = 0.1;
+    float ambientOcclusion = texture(ssao, fs_in.uv).r;
     vec3 ambient = ambientStrength * fragAlbedo;
+    if (ambientOcclusionOn) {
+        ambient *= ambientOcclusion;
+    }
 
     // Diffuse
     float diffuseStrength;
