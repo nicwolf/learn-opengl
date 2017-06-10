@@ -4,6 +4,7 @@ aux_source_directory(. SRC_LIST)
 add_executable(${PROJECT_NAME}
     ${SRC_LIST}
     shaders/base.vert
+    shaders/blinn.frag
     shaders/constant.frag
     shaders/deferred-geom.vert
     shaders/deferred-geom.frag
