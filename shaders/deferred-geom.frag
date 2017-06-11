@@ -9,6 +9,7 @@ in VS_OUT
     vec3 position;
     vec3 normal;
     vec2 uv;
+    mat3 TBNMatrix;
     mat3 TBNMatrixInverse;
 } fs_in;
 
@@ -22,14 +23,46 @@ struct Material
 };
 uniform Material material;
 
+vec2 parallaxMapping();
+
 void main() {
     position = fs_in.position;
-    // position = vec3(0.5);
-//    normal = normalize(fs_in.normal);
-    normal = texture(material.normal, fs_in.uv).xyz;
+    vec2 uv = parallaxMapping();
+//    if (uv.x > 1.0 || uv.x < 0.0 || uv.y > 1.0 || uv.y < 0.0) discard;
+    normal = texture(material.normal, uv).xyz;
     normal = fs_in.TBNMatrixInverse * normal;
     normal = normalize(normal);
     // To Do: Parallax Mapping
-    albedoSpecular.rgb = texture(material.diffuse, fs_in.uv).rgb;
-    albedoSpecular.a   = texture(material.specular, fs_in.uv).r;
+    albedoSpecular.rgb = texture(material.diffuse, uv).rgb;
+    albedoSpecular.a   = texture(material.specular, uv).r;
+}
+
+vec2 parallaxMapping() {
+    float numLayers = 30.0;
+    float layerDepth = 1.0 / numLayers;
+    float currentLayerDepth = 0.0;
+    float currentMapDepth = texture(material.depth, fs_in.uv).r;
+
+    vec3 viewDir = fs_in.TBNMatrix * fs_in.position;
+    float heightScale = .1;
+    vec2 p = viewDir.xy * heightScale;
+    vec2 deltaUV = p / numLayers;
+    vec2 currentUV = fs_in.uv;
+
+    while (currentLayerDepth < currentMapDepth) {
+        currentLayerDepth += layerDepth;
+        currentUV -= deltaUV;
+        currentMapDepth = texture(material.depth, currentUV).r;
+    }
+
+    float previousLayerDepth = currentLayerDepth - layerDepth;
+    vec2 previousUV = currentUV + deltaUV;
+    float previousMapDepth = texture(material.depth, previousUV).r;
+
+    float afterDepth = currentMapDepth - currentLayerDepth;
+    float beforeDepth = previousMapDepth - previousLayerDepth;
+
+    float weight = afterDepth / (afterDepth - beforeDepth);
+
+    return previousUV*weight + currentUV*(1-weight);
 }

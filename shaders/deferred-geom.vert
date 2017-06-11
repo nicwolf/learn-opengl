@@ -22,6 +22,7 @@ out VS_OUT
     vec3 position;
     vec3 normal;
     vec2 uv;
+    mat3 TBNMatrix;
     mat3 TBNMatrixInverse;
 } vs_out;
 
@@ -34,4 +35,5 @@ void main() {
     vec3 B = normalize(vec3(modelViewMatrix * vec4(bitangent, 0.0)));
     vec3 N = normalize(vec3(modelViewMatrix * vec4(normal,    0.0)));
     vs_out.TBNMatrixInverse = mat3(T, B, N);
+    vs_out.TBNMatrix = transpose(vs_out.TBNMatrixInverse);
 }

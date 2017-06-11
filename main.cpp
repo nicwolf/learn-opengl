@@ -370,7 +370,7 @@ int main(int argc, char *argv[])
 
     // Lighting Setup
     // ==============
-    const unsigned int NR_LIGHTS = 30;
+    const unsigned int NR_LIGHTS = 20;
     std::vector<glm::vec3> lightPositions;
     std::vector<glm::vec3> lightColors;
     srand(12);

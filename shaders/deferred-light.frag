@@ -21,7 +21,7 @@ layout (std140) uniform Matrices
     uniform mat4 viewMatrix;
 };
 
-const int NR_LIGHTS = 30;
+const int NR_LIGHTS = 20;
 uniform Light lights[NR_LIGHTS];
 
 uniform sampler2D gPosition;
